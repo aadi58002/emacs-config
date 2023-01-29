@@ -1,0 +1,9 @@
+./org-roam.db
+./history
+./ snippets/
+./elpa/
+./emms/
+./eln-cache/
+./transient/
+./auto-save-list/
+./projectile-bookmarks.eld
