@@ -1,28 +1,3 @@
-#+TITLE: Config of Emacs
-#+DESCRIPTION: This is the org mode version of my config of emacs
-#+FILETAGS: Config
-#+PROPERTY: header-args :tangle ~/.config/emacs/init.el
-
-* Table of Content :toc:noexport:
-- [[#customized-default][Customized Default]]
-- [[#package-initialize][Package initialize]]
-- [[#packages][Packages]]
-  - [[#keybindings][Keybindings]]
-  - [[#generally-helpful-package][Generally helpful Package]]
-  - [[#ui][UI]]
-  - [[#completion][Completion]]
-  - [[#coding][Coding]]
-  - [[#org][Org]]
-- [[#custom-function][Custom Function]]
-- [[#keybindings-1][Keybindings]]
-  - [[#magit-map][Magit Map]]
-  - [[#buffer-map][Buffer Map]]
-  - [[#file-map][File Map]]
-  - [[#org-map][Org Map]]
-  - [[#lsp-map][Lsp Map]]
-
-* Customized Default
-#+begin_src emacs-lisp
 ;;; init.el -*- lexical-binding: t; -*-
 (setenv "LSP_USE_PLISTS" "1")
 (setq create-lockfiles nil)
@@ -83,9 +58,7 @@
             window-combination-resize t
             global-auto-revert-mode 1
             global-auto-revert-non-file-buffers t)
-#+end_src
-* Package initialize
-#+begin_src emacs-lisp
+
 (require 'package)
 
 (setq package-archives '(("melpa" . "https://melpa.org/packages/")
@@ -102,45 +75,33 @@
 
 (require 'use-package)
 (setq use-package-always-ensure t)
-#+end_src
 
-* Packages
-** Keybindings
-*** Evil
-#+begin_src emacs-lisp
-  (eval-when-compile (setq evil-want-keybinding nil))
+(eval-when-compile (setq evil-want-keybinding nil))
 
-  (use-package evil
-    :init
-    (progn
-        (setq evil-want-integration t) ;; This is optional since it's already set to t by default.
-        (setq evil-want-keybinding nil)
-        (setq evil-undo-system 'undo-fu))
-    :config
-    (progn
-    (evil-mode 1))
-        (setq evil-move-cursor-back nil
-            evil-want-fine-undo t
-            evil-move-beyond-eol t
-            evil-vsplit-window-right t
-            evil-split-window-below t))
-#+end_src
-*** General
-#+begin_src emacs-lisp
+(use-package evil
+  :init
+  (progn
+      (setq evil-want-integration t) ;; This is optional since it's already set to t by default.
+      (setq evil-want-keybinding nil)
+      (setq evil-undo-system 'undo-fu))
+  :config
+  (progn
+  (evil-mode 1))
+      (setq evil-move-cursor-back nil
+          evil-want-fine-undo t
+          evil-move-beyond-eol t
+          evil-vsplit-window-right t
+          evil-split-window-below t))
+
 (use-package general
   :config
   (general-evil-setup t))
-#+end_src
-*** Evil Collection
-#+begin_src emacs-lisp
+
 (use-package evil-collection
     :after evil
     :config
     (evil-collection-init))
-#+end_src
-** Generally helpful Package
-*** Emms
-#+begin_src emacs-lisp
+
 (use-package emms
   :init
     (require 'emms-setup)
@@ -156,9 +117,7 @@
 	  emms-source-file-directory-tree-function 'emms-source-file-directory-tree-find)
     (emms-add-directory-tree "~/Music/")
     (emms-add-directory-tree "~/Videos/Test Video"))
-#+end_src
-*** Helpful
-#+begin_src emacs-lisp
+
 (use-package helpful
   :ensure t
     :config
@@ -168,32 +127,21 @@
         (global-set-key (kbd "C-c C-d") #'helpful-at-point)
         (global-set-key (kbd "C-h F") #'helpful-function)
         (global-set-key (kbd "C-h C") #'helpful-command))
-#+end_src
-*** Undo fu
-#+begin_src emacs-lisp
+
 (use-package undo-fu)
-#+end_src
-*** Undohist
-#+begin_src emacs-lisp
+
 (use-package undohist
   :config
     (undohist-initialize))
-#+end_src
-*** Savehist
-#+begin_src emacs-lisp
+
 (use-package savehist
   :init
   (savehist-mode))
-#+end_src
-** UI
-*** Which Key
-#+begin_src emacs-lisp
+
 (use-package which-key 
   :init
   (which-key-mode))
-#+end_src
-*** Doom theme
-#+begin_src emacs-lisp
+
 (use-package doom-themes
     :ensure t
     :config
@@ -218,42 +166,27 @@
         '(emms-playlist-selected-face (( t(:foreground "royal blue"))))
         '(emms-playlist-track-face (( t(:foreground "#5da3e7"))))
         '(org-ellipsis (( t(:foreground "#C678DD"))))))
-#+end_src
-*** Modus theme
-#+begin_src emacs-lisp
+
 ;; (use-package modus-themes
 ;;    :config
 ;;    (setq modus-themes-italic-constructs t
 ;;          modus-themes-bold-constructs nil)
 ;;    (load-theme 'modus-vivendi t))
-#+end_src
-*** Doom modeline
-#+begin_src emacs-lisp
+
 (use-package doom-modeline
   :init (doom-modeline-mode 1))
-#+end_src
-*** All Icons Mode Line
-#+begin_src emacs-lisp
+
 (use-package all-the-icons)
-#+end_src
-*** Completions Icons
-#+begin_src emacs-lisp
+
 (use-package all-the-icons-completion
       :config
       (all-the-icons-completion-mode)
       (add-hook 'marginalia-mode-hook #'all-the-icons-completion-marginalia-setup))
-#+end_src
-*** Unicode fonts
-#+begin_src emacs-lisp
+
 (use-package unicode-fonts)
-#+end_src
-*** Emojify
-#+begin_src emacs-lisp
+
 (use-package emojify)
-#+end_src
-** Completion
-*** Corfu
-#+begin_src emacs-lisp
+
 (use-package corfu
   :init
   (global-corfu-mode)
@@ -268,9 +201,7 @@
   (global-corfu-mode 1)
   (advice-add #'lsp-completion-at-point :around #'cape-wrap-noninterruptible)
   (corfu-popupinfo-mode 1))
-#+end_src
-*** Emacs
-#+begin_src emacs-lisp
+
 (use-package emacs
   :init
   (defun crm-indicator (args)
@@ -288,16 +219,12 @@
   (setq enable-recursive-minibuffers t)
   (setq completion-cycle-threshold 3)
   (setq tab-always-indent 'complete))
-#+end_src
-*** Cape
-#+begin_src emacs-lisp
+
 (use-package cape
     :init
     (add-to-list 'completion-at-point-functions #'cape-file)
     (add-to-list 'completion-at-point-functions #'cape-dabbrev))
-#+end_src
-*** Vertico
-#+begin_src emacs-lisp
+
 (use-package vertico
   :init
   (setq vertico-count 20
@@ -305,17 +232,13 @@
         vertico-cycle t)
   (vertico-mode)
   (setq completion-styles '(substring orderless basic)))
-#+end_src
-*** Marginalia
-#+begin_src emacs-lisp
+
 (use-package marginalia
   :config
   (marginalia-mode)
   (setq marginalia-align 'center
     marginalia-align-offset 20))
-#+end_src
-*** Embark
-#+begin_src emacs-lisp
+
 (use-package embark
   :ensure t
   :bind
@@ -337,16 +260,12 @@
                '("\\`\\*Embark Collect \\(Live\\|Completions\\)\\*"
                  nil
                  (window-parameters (mode-line-format . none)))))
-#+end_src
-*** Embark Consult
-#+begin_src emacs-lisp
+
 (use-package embark-consult
   :ensure t ; only need to install it, embark loads it after consult if found
   :hook
   (embark-collect-mode . consult-preview-at-point-mode))
-#+end_src
-*** Orderless
-#+begin_src emacs-lisp
+
 (use-package orderless
 :ensure t
   :config
@@ -387,9 +306,7 @@
   ;; ...otherwise find-file gets different highlighting than other commands
   (setq orderless-matching-styles '(orderless-prefixes orderless-regexp orderless-flex))
   (set-face-attribute 'completions-first-difference nil :inherit nil))
-#+end_src
-*** Consult
-#+begin_src emacs-lisp
+
 (use-package consult
   :ensure t
   :bind (;; C-c bindings (mode-specific-map)
@@ -460,47 +377,34 @@
    ;; :preview-key (kbd "M-.")
    :preview-key '(:debounce 0.4 any))
   (setq consult-narrow-key "<")) ;; (kbd "C-+")
-#+end_src
-*** Embark Consult
-#+begin_src emacs-lisp
+
 (use-package embark-consult
   :hook
   (embark-collect-mode . consult-preview-at-point-mode))
-#+end_src
-** Coding
-*** Evil Nerd Commentor
-#+begin_src emacs-lisp
+
 (use-package evil-nerd-commenter)
-#+end_src
-*** Lsp Mode
-#+begin_src emacs-lisp
-  (use-package lsp-mode
-    :ensure t
-    :custom
-    (lsp-completion-provider :none) ;; we use Corfu!
-    :init
-    (setq lsp-log-io nil)
-    (defun my/lsp-mode-setup-completion ()
-      (setf (alist-get 'styles (alist-get 'lsp-capf completion-category-defaults))
-            '(flex))) ;; Configure flex
-    :hook
-    (lsp-completion-mode . my/lsp-mode-setup-completion))
-#+end_src
-*** Rust
-**** Rustic
-#+begin_src emacs-lisp
-  (use-package rustic
+
+(use-package lsp-mode
   :ensure t
-    :config
-      (setq 
-          lsp-rust-analyzer-display-chaining-hints t
-          lsp-rust-analyzer-expand-macro t
-          lsp-rust-analyzer-display-parameter-hints t
-          lsp-rust-analyzer-server-display-inlay-hints t))
-#+end_src
-*** Typescript
-**** Web mode
-#+begin_src emacs-lisp
+  :custom
+  (lsp-completion-provider :none) ;; we use Corfu!
+  :init
+  (setq lsp-log-io nil)
+  (defun my/lsp-mode-setup-completion ()
+    (setf (alist-get 'styles (alist-get 'lsp-capf completion-category-defaults))
+          '(flex))) ;; Configure flex
+  :hook
+  (lsp-completion-mode . my/lsp-mode-setup-completion))
+
+(use-package rustic
+:ensure t
+  :config
+    (setq 
+        lsp-rust-analyzer-display-chaining-hints t
+        lsp-rust-analyzer-expand-macro t
+        lsp-rust-analyzer-display-parameter-hints t
+        lsp-rust-analyzer-server-display-inlay-hints t))
+
 (setq web-mode-markup-indent-offset 2)
 (setq web-mode-code-indent-offset 2)
 (setq web-mode-css-indent-offset 2)
@@ -513,14 +417,10 @@
 	 ("\\.tsx\\'" . web-mode)
 	 ("\\.html\\'" . web-mode))
   :commands web-mode)
-#+end_src
-**** Flycheck
-#+begin_src emacs-lisp
+
 (use-package flycheck)
-#+end_src
-**** Tide
-#+begin_src emacs-lisp
-    (defun setup-tide-mode ()
+
+(defun setup-tide-mode ()
       (interactive)
       (tide-setup)
       (flycheck-mode +1)
@@ -537,128 +437,94 @@
          (tsx-ts-mode . tide-setup)
          (typescript-ts-mode . tide-hl-identifier-mode)
          (before-save . tide-format-before-save)))
-#+end_src
-*** Lsp ui
-#+begin_src emacs-lisp
-  (use-package lsp-ui
-    :hook (lsp-mode . lsp-ui-mode)
-    :config
-    (setq lsp-ui-peek-enable t
-          lsp-ui-doc-position 'bottom
-          lsp-ui-peek-always-show t
-          lsp-signature-auto-activate t
-          lsp-ui-doc-delay 0.0
-          lsp-ui-sideline-show-diagnostics t 
-          lsp-enable-symbol-highlighting t 
-          lsp-ui-doc-enable t 
-          lsp-ui-doc-show-with-cursor t 
-          lsp-ui-doc-show-with-mouse t 
-          lsp-lens-enable t 
-          lsp-headerline-breadcrumb-enable t 
-          lsp-ui-sideline-show-diagnostics t 
-          lsp-modeline-code-actions-enable t 
-          lsp-eldoc-enable-hover t 
-          lsp-completion-show-detail t 
-          lsp-completion-show-kind t 
-          lsp-ui-sideline-ignore-duplicate t
-          lsp-ui-sideline-actions-icon lsp-ui-sideline-actions-icon-default))
-#+end_src
-*** Tree sitter
-#+begin_src emacs-lisp
+
+(use-package lsp-ui
+  :hook (lsp-mode . lsp-ui-mode)
+  :config
+  (setq lsp-ui-peek-enable t
+        lsp-ui-doc-position 'bottom
+        lsp-ui-peek-always-show t
+        lsp-signature-auto-activate t
+        lsp-ui-doc-delay 0.0
+        lsp-ui-sideline-show-diagnostics t 
+        lsp-enable-symbol-highlighting t 
+        lsp-ui-doc-enable t 
+        lsp-ui-doc-show-with-cursor t 
+        lsp-ui-doc-show-with-mouse t 
+        lsp-lens-enable t 
+        lsp-headerline-breadcrumb-enable t 
+        lsp-ui-sideline-show-diagnostics t 
+        lsp-modeline-code-actions-enable t 
+        lsp-eldoc-enable-hover t 
+        lsp-completion-show-detail t 
+        lsp-completion-show-kind t 
+        lsp-ui-sideline-ignore-duplicate t
+        lsp-ui-sideline-actions-icon lsp-ui-sideline-actions-icon-default))
+
 (use-package tree-sitter)
 (use-package tree-sitter-langs)
-#+end_src
-*** Yasnippet
-#+begin_src emacs-lisp
+
 (use-package yasnippet
-  :ensure t
+:ensure t
   :config
   (setq yas-snippet-dirs
       '("~/.config/emacs/snippets"))
 
 (yas-global-mode 1) ;; or M-x yas-reload-all if you've started YASnippet already.
-#+end_src
-*** Magit
-#+begin_src emacs-lisp
+
 (use-package magit)
-#+end_src
-*** Git gutter
-#+begin_src emacs-lisp
+
 (use-package git-gutter-fringe
-    :config
-    (global-git-gutter-mode +1)
-    (setq-default fringes-outside-margins t)
-        ;; thin fringe bitmaps
-        (define-fringe-bitmap 'git-gutter-fr:added [224]
-        nil nil '(center repeated))
-        (define-fringe-bitmap 'git-gutter-fr:modified [224]
-        nil nil '(center repeated))
-        (define-fringe-bitmap 'git-gutter-fr:deleted [128 192 224 240]
-        nil nil 'bottom))
-#+end_src
-*** Smart compile
-#+begin_src emacs-lisp
+        :config
+        (global-git-gutter-mode +1)
+(setq-default fringes-outside-margins t)
+    ;; thin fringe bitmaps
+    (define-fringe-bitmap 'git-gutter-fr:added [224]
+      nil nil '(center repeated))
+    (define-fringe-bitmap 'git-gutter-fr:modified [224]
+      nil nil '(center repeated))
+    (define-fringe-bitmap 'git-gutter-fr:deleted [128 192 224 240]
+      nil nil 'bottom)
+  )
+
 (use-package smart-compile
   :config
   (setq smart-compile-check-build-system 'nil)
   (add-to-list 'smart-compile-alist '("\\.[Cc]+[Pp]*\\'" . "make %n && touch inputf.in && timeout 4s ./%n < inputf.in &> outputf.in "))
   (add-to-list 'smart-compile-alist  '("\\.rs$" . "touch inputf.in && cargo run -q < inputf.in &> outputf.in "))))
-#+end_src
-*** Evil Multi Edit
-#+begin_src emacs-lisp
+
 (use-package evil-multiedit
     :config
     (evil-multiedit-default-keybinds))
-#+end_src
-*** Projectile
-#+begin_src emacs-lisp
+
 (use-package projectile
   :init
   (projectile-mode +1)
   :bind (:map projectile-mode-map
               ("s-p" . projectile-command-map)
               ("C-c p" . projectile-command-map)))
-#+end_src
-*** Rainbow Delimiter
-#+begin_src emacs-lisp
+
 (use-package rainbow-delimiters
   :hook (prog-mode . rainbow-delimiters-mode))
-#+end_src
-** Org
-*** Defaults
-#+begin_src emacs-lisp
+
 (add-hook 'org-mode-hook (lambda () (org-indent-mode 1)))
 (add-hook 'org-mode-hook (lambda () (org-toggle-pretty-entities 1)))
-#+end_src
-*** Evil org
-#+begin_src emacs-lisp
+
 (use-package evil-org)
-#+end_src
-*** Org cliplink
-#+begin_src emacs-lisp
+
 (use-package org-cliplink)
-#+end_src
-*** Link hint
-#+begin_src emacs-lisp
+
 (use-package link-hint)
-#+end_src
-*** Org toc
-#+begin_src emacs-lisp
+
 (use-package toc-org)  
 (add-hook 'org-mode-hook (lambda () (toc-org-mode 1)))
-#+end_src
-*** Org Superstar
-#+begin_src emacs-lisp
+
 (use-package org-superstar)
 (add-hook 'org-mode-hook (lambda () (org-superstar-mode 1)))
-#+end_src
-*** Org appear
-#+begin_src emacs-lisp
+
 (use-package org-appear)
 (add-hook 'org-mode-hook 'org-appear-mode)
-#+end_src
-*** Org tempo
-#+begin_src emacs-lisp
+
 (setq org-todo-keywords
     '((sequence "TODO(t)" "PROJ(p)" "ACTIVE(a)" "REVIEW(r)" "START(s)" "NEXT(n)" "WORKING(w)" "HOLD(h)" "|" "DONE(d)" "KILL(k)")
         (sequence "|" "OKAY(o)" "YES(y)" "NO(n)")))
@@ -666,121 +532,90 @@
 (require 'org-tempo)
 (add-to-list 'org-structure-template-alist '("la" . "src latex"))
 (add-to-list 'org-structure-template-alist '("ec" . "src emacs-lisp"))
-#+end_src
-*** Org Denote
-#+begin_src emacs-lisp
+
 (use-package denote
     :config
     (setq denote-directory "~/Documents/Denote")
     (setq  denote-known-keywords '()))
-#+end_src
 
-* Custom Function
-*** Kitty Async
-#+begin_src emacs-lisp
-    (defun kitty-async-process ()
-      (interactive)
-      (start-process "kitty" nil "setsid" "kitty" "-d" default-directory))
-  (define-key evil-normal-state-map "," 'kitty-async-process)
+(defun kitty-async-process ()
+    (interactive)
+    (start-process "kitty" nil "setsid" "kitty" "-d" default-directory))
+(define-key evil-normal-state-map "," 'kitty-async-process)
 
-#+end_src
-*** Brave Vscode docs
-#+begin_src emacs-lisp
-    (defun brave-vscode-docs ()
-      (interactive)
-      (start-process "brave" nil "setsid" "brave" "--incognito" "https://code.visualstudio.com/api/language-extensions/language-server-extension-guide"))
+(defun brave-vscode-docs ()
+  (interactive)
+  (start-process "brave" nil "setsid" "brave" "--incognito" "https://code.visualstudio.com/api/language-extensions/language-server-extension-guide"))
 
-#+end_src
-*** Competitive layout
-#+begin_src emacs-lisp
-    (defun Competitive-coding-output-input-toggle ()
-      (interactive)
-      (delete-other-windows)
-      (kill-matching-buffers "*.in")
-      (evil-window-vsplit)
-      (other-window 1)
-      (find-file (expand-file-name "inputf.in" default-directory))
-      (evil-window-split)
-      (other-window 1)
-      (find-file (expand-file-name "outputf.in" default-directory))
-      (other-window 1)
-      (enlarge-window-horizontally 40))
-  (evil-define-key 'normal c++-mode-map "C-c z" 'Competitive-coding-output-input-toggle)
+(defun Competitive-coding-output-input-toggle ()
+    (interactive)
+    (delete-other-windows)
+    (kill-matching-buffers "*.in")
+    (evil-window-vsplit)
+    (other-window 1)
+    (find-file (expand-file-name "inputf.in" default-directory))
+    (evil-window-split)
+    (other-window 1)
+    (find-file (expand-file-name "outputf.in" default-directory))
+    (other-window 1)
+    (enlarge-window-horizontally 40))
+(evil-define-key 'normal c++-mode-map "C-c z" 'Competitive-coding-output-input-toggle)
 
-#+end_src
-*** Rust reset
-#+begin_src emacs-lisp
-    (defun rust-reset()
-      (interactive)
-      (widen)
-      (erase-buffer)
-      (insert "<cp")
-      (yas-expand)
-      (narrow-to-defun))
+(defun rust-reset()
+  (interactive)
+  (widen)
+  (erase-buffer)
+  (insert "<cp")
+  (yas-expand)
+  (narrow-to-defun))
 
-#+end_src
-*** Rust paste input
-#+begin_src emacs-lisp
-    (defun code-input-refresh()
-      (interactive)
-      (write-region (current-kill 0) nil (concat default-directory "inputf.in") nil)
-      (Competitive-coding-output-input-toggle))
-  (evil-define-key 'normal c++-mode-map "C-c z" 'code-input-refresh)
+(defun code-input-refresh()
+    (interactive)
+    (write-region (current-kill 0) nil (concat default-directory "inputf.in") nil)
+    (Competitive-coding-output-input-toggle))
+(evil-define-key 'normal c++-mode-map "C-c z" 'code-input-refresh)
 
-#+end_src
-*** Copy current file
-#+begin_src emacs-lisp
-    ;; source: http://steve.yegge.googlepages.com/my-dot-emacs-file
-    (defun copy-current-file (new-name)
-      "Copy current file to a NEW-NAME."
-      (interactive (list
-                    (read-string "New name: " (current-kill 0) nil (current-kill 0))))
-      (let ((name (buffer-name))
-            (filename (buffer-file-name)))
-        (if (not filename)
-            (message "Buffer '%s' is not visiting a file!" name)
-          (if (get-buffer new-name)
-              (message "A buffer named '%s' already exists!" new-name)
-              (copy-file filename (concat (replace-regexp-in-string " " "" (capitalize (replace-regexp-in-string "[^[:word:]_]" " " new-name))) ".rs") 1)))))
-#+end_src
-* Keybindings
-#+begin_src emacs-lisp
-  (global-set-key (kbd "<escape>") 'keyboard-escape-quit)
-  (global-set-key (kbd "C-;") 'embark-act)
-  (general-create-definer adi/leader-keys
-   :states '(normal visual emacs jpnb)
-   :keymaps 'override
-   :prefix "SPC")
-  (general-create-definer adi/leader-local-keys
-   :states '(normal visual emacs jpnb)
-   :keymaps 'override
-   :prefix "SPC m")
-  (adi/leader-keys
-      "SPC" 'find-file
-      "RET" 'denote-open-or-create)
-  (general-define-key
-      :states 'motion
-      "K" 'helpful-at-point
-      "M-/" 'evilnc-comment-or-uncomment-lines)
-#+end_src
-** Magit Map
-#+begin_src emacs-lisp
+;; source: http://steve.yegge.googlepages.com/my-dot-emacs-file
+(defun copy-current-file (new-name)
+  "Copy current file to a NEW-NAME."
+  (interactive (list
+                (read-string "New name: " (current-kill 0) nil (current-kill 0))))
+  (let ((name (buffer-name))
+        (filename (buffer-file-name)))
+    (if (not filename)
+        (message "Buffer '%s' is not visiting a file!" name)
+      (if (get-buffer new-name)
+          (message "A buffer named '%s' already exists!" new-name)
+          (copy-file filename (concat (replace-regexp-in-string " " "" (capitalize (replace-regexp-in-string "[^[:word:]_]" " " new-name))) ".rs") 1)))))
+
+(global-set-key (kbd "<escape>") 'keyboard-escape-quit)
+(global-set-key (kbd "C-;") 'embark-act)
+(general-create-definer adi/leader-keys
+ :states '(normal visual emacs jpnb)
+ :keymaps 'override
+ :prefix "SPC")
+(general-create-definer adi/leader-local-keys
+ :states '(normal visual emacs jpnb)
+ :keymaps 'override
+ :prefix "SPC m")
 (adi/leader-keys
-    "gg" 'magit) 
-#+end_src
-** Buffer Map
-#+begin_src emacs-lisp
+    "SPC" 'find-file
+    "RET" 'denote-open-or-create)
+(general-define-key
+    :states 'motion
+    "K" 'helpful-at-point
+    "M-/" 'evilnc-comment-or-uncomment-lines)
+
+(adi/leader-keys
+    "gg" 'magit)
+
 (adi/leader-keys
     "bb" 'consult-buffer
     "bk" 'kill-this-buffer)
-#+end_src
-** File Map
-#+begin_src emacs-lisp
+
 (adi/leader-keys
     "fr" 'consult-recent-file)
-#+end_src
-** Org Map
-#+begin_src emacs-lisp
+
 (general-define-key
     :keymap 'org-mode-map
     :states 'normal
@@ -788,21 +623,16 @@
       "<RET>" 'org-open-at-point)
 (adi/leader-local-keys org-mode-map
     "lc" 'org-cliplink)
-#+end_src
-** Lsp Map
-#+begin_src emacs-lisp
-  (general-define-key
-      :keymap 'lsp-mode-map
-      :states 'normal
-        "K" 'lsp-describe-thing-at-point
-        "C-c a" 'lsp-format-buffer)
-#+end_src
-*** Rustic Mode
-#+begin_src emacs-lisp
-  (adi/leader-local-keys
-      :keymap 'rustic-mode-map
-      "z" 'Competitive-coding-output-input-toggle
-      "r" 'rust-reset
-      "i" 'code-input-refresh
-      "c" 'copy-current-file)
-#+end_src
+
+(general-define-key
+    :keymap 'lsp-mode-map
+    :states 'normal
+      "K" 'lsp-describe-thing-at-point
+      "C-c a" 'lsp-format-buffer)
+
+(adi/leader-local-keys
+    :keymap 'rustic-mode-map
+    "z" 'Competitive-coding-output-input-toggle
+    "r" 'rust-reset
+    "i" 'code-input-refresh
+    "c" 'copy-current-file)
