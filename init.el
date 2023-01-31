@@ -26,13 +26,10 @@
 (setq dired-make-directory-clickable t) ; Emacs 29.1
 (setq dired-free-space nil) ; Emacs 29.1
 
-(add-hook 'dired-mode-hook #'dired-hide-details-mode)
 (add-hook 'dired-mode-hook #'hl-line-mode)
 (setq dired-isearch-filenames 'dwim)
-;; The following variables were introduced in Emacs 27.1
 (setq dired-create-destination-dirs 'ask)
 (setq dired-vc-rename-file t)
-;; And this is for Emacs 28
 (setq dired-do-revert-buffer (lambda (dir) (not (file-remote-p dir))))
 
 (setq dired-clean-up-buffers-too t)
@@ -182,6 +179,10 @@
       :config
       (all-the-icons-completion-mode)
       (add-hook 'marginalia-mode-hook #'all-the-icons-completion-marginalia-setup))
+
+(use-package all-the-icons-dired
+  :config
+  (add-hook 'dired-mode-hook 'all-the-icons-dired-mode))
 
 (use-package unicode-fonts)
 
@@ -465,7 +466,7 @@
 (use-package tree-sitter-langs)
 
 (use-package yasnippet
-:ensure t
+  :ensure t
   :config
   (setq yas-snippet-dirs
       '("~/.config/emacs/snippets"))
@@ -475,17 +476,16 @@
 (use-package magit)
 
 (use-package git-gutter-fringe
-        :config
-        (global-git-gutter-mode +1)
-(setq-default fringes-outside-margins t)
-    ;; thin fringe bitmaps
-    (define-fringe-bitmap 'git-gutter-fr:added [224]
-      nil nil '(center repeated))
-    (define-fringe-bitmap 'git-gutter-fr:modified [224]
-      nil nil '(center repeated))
-    (define-fringe-bitmap 'git-gutter-fr:deleted [128 192 224 240]
-      nil nil 'bottom)
-  )
+    :config
+    (global-git-gutter-mode +1)
+    (setq-default fringes-outside-margins t)
+        ;; thin fringe bitmaps
+        (define-fringe-bitmap 'git-gutter-fr:added [224]
+        nil nil '(center repeated))
+        (define-fringe-bitmap 'git-gutter-fr:modified [224]
+        nil nil '(center repeated))
+        (define-fringe-bitmap 'git-gutter-fr:deleted [128 192 224 240]
+        nil nil 'bottom))
 
 (use-package smart-compile
   :config
@@ -507,8 +507,10 @@
 (use-package rainbow-delimiters
   :hook (prog-mode . rainbow-delimiters-mode))
 
-(add-hook 'org-mode-hook (lambda () (org-indent-mode 1)))
-(add-hook 'org-mode-hook (lambda () (org-toggle-pretty-entities 1)))
+(defun adi/org-setup()
+    (org-indent-mode 1)
+    (org-toggle-pretty-entities 1))
+(add-hook 'org-mode-hook 'adi/org-setup)
 
 (use-package evil-org)
 

@@ -51,13 +51,10 @@
 (setq dired-make-directory-clickable t) ; Emacs 29.1
 (setq dired-free-space nil) ; Emacs 29.1
 
-(add-hook 'dired-mode-hook #'dired-hide-details-mode)
 (add-hook 'dired-mode-hook #'hl-line-mode)
 (setq dired-isearch-filenames 'dwim)
-;; The following variables were introduced in Emacs 27.1
 (setq dired-create-destination-dirs 'ask)
 (setq dired-vc-rename-file t)
-;; And this is for Emacs 28
 (setq dired-do-revert-buffer (lambda (dir) (not (file-remote-p dir))))
 
 (setq dired-clean-up-buffers-too t)
@@ -242,6 +239,12 @@
       :config
       (all-the-icons-completion-mode)
       (add-hook 'marginalia-mode-hook #'all-the-icons-completion-marginalia-setup))
+#+end_src
+*** Dired Icons
+#+begin_src emacs-lisp
+(use-package all-the-icons-dired
+  :config
+  (add-hook 'dired-mode-hook 'all-the-icons-dired-mode))
 #+end_src
 *** Unicode fonts
 #+begin_src emacs-lisp
@@ -627,8 +630,10 @@
 ** Org
 *** Defaults
 #+begin_src emacs-lisp
-(add-hook 'org-mode-hook (lambda () (org-indent-mode 1)))
-(add-hook 'org-mode-hook (lambda () (org-toggle-pretty-entities 1)))
+(defun adi/org-setup()
+    (org-indent-mode 1)
+    (org-toggle-pretty-entities 1))
+(add-hook 'org-mode-hook 'adi/org-setup)
 #+end_src
 *** Evil org
 #+begin_src emacs-lisp
