@@ -27,6 +27,7 @@
 (setenv "LSP_USE_PLISTS" "1")
 (setq create-lockfiles nil)
 (setq recentf-max-menu-items 25)
+(setq revert-without-query '(".*"))
 (recentf-mode 1)
 (setq gc-cons-threshold 100000000)
 (setq read-process-output-max (* 1024 1024))
@@ -105,22 +106,20 @@
 ** Keybindings
 *** Evil
 #+begin_src emacs-lisp
-  (eval-when-compile (setq evil-want-keybinding nil))
+(eval-when-compile (setq evil-want-keybinding nil))
 
-  (use-package evil
-    :init
-    (progn
-        (setq evil-want-integration t) ;; This is optional since it's already set to t by default.
-        (setq evil-want-keybinding nil)
-        (setq evil-undo-system 'undo-fu))
-    :config
-    (progn
-    (evil-mode 1))
-        (setq evil-move-cursor-back nil
-            evil-want-fine-undo t
-            evil-move-beyond-eol t
-            evil-vsplit-window-right t
-            evil-split-window-below t))
+(use-package evil
+  :init
+    (setq evil-want-integration t) ;; This is optional since it's already set to t by default.
+    (setq evil-want-keybinding nil)
+    (setq evil-undo-system 'undo-fu)
+  :config
+  (evil-mode 1))
+(setq evil-move-cursor-back nil
+    evil-want-fine-undo t
+    evil-move-beyond-eol t
+    evil-vsplit-window-right t
+    evil-split-window-below t)
 #+end_src
 *** General
 #+begin_src emacs-lisp
@@ -144,7 +143,7 @@
     (emms-all)
     (setq emms-source-file-default-directory "~/Music/"
 	  emms-info-functions '(emms-info-native)
-	  emms-player-list '(emms-player-vlc)
+	  emms-player-list '(emms-player-mpv)
 	  emms-repeat-track t
 	  emms-mode-line-mode t
 	  emms-playlist-buffer-name "*Music*"
@@ -541,6 +540,10 @@
          (typescript-ts-mode . tide-hl-identifier-mode)
          (before-save . tide-format-before-save)))
 #+end_src
+*** C/C++
+#+begin_src emacs-lisp
+(use-package ccls)
+#+end_src
 *** Lsp ui
 #+begin_src emacs-lisp
   (use-package lsp-ui
@@ -632,7 +635,7 @@
 #+begin_src emacs-lisp
 (defun adi/org-setup()
     (org-indent-mode 1)
-    (org-toggle-pretty-entities 1))
+    (org-pretty-entities 1))
 (add-hook 'org-mode-hook 'adi/org-setup)
 #+end_src
 *** Evil org
@@ -703,10 +706,8 @@
       (delete-other-windows)
       (kill-matching-buffers "*.in")
       (evil-window-vsplit)
-      (other-window 1)
       (find-file (expand-file-name "inputf.in" default-directory))
       (evil-window-split)
-      (other-window 1)
       (find-file (expand-file-name "outputf.in" default-directory))
       (other-window 1)
       (enlarge-window-horizontally 40))
@@ -715,13 +716,13 @@
 #+end_src
 *** Rust reset
 #+begin_src emacs-lisp
-    (defun rust-reset()
-      (interactive)
-      (widen)
-      (erase-buffer)
-      (insert "<cp")
-      (yas-expand)
-      (narrow-to-defun))
+  (defun rust-reset()
+    (interactive)
+    (widen)
+    (erase-buffer)
+    (insert "<cp")
+    (yas-expand)
+    (narrow-to-defun))
 
 #+end_src
 *** Rust paste input
@@ -750,23 +751,24 @@
 #+end_src
 * Keybindings
 #+begin_src emacs-lisp
-  (global-set-key (kbd "<escape>") 'keyboard-escape-quit)
-  (global-set-key (kbd "C-;") 'embark-act)
-  (general-create-definer adi/leader-keys
-   :states '(normal visual emacs jpnb)
-   :keymaps 'override
-   :prefix "SPC")
-  (general-create-definer adi/leader-local-keys
-   :states '(normal visual emacs jpnb)
-   :keymaps 'override
-   :prefix "SPC m")
-  (adi/leader-keys
-      "SPC" 'find-file
-      "RET" 'denote-open-or-create)
-  (general-define-key
-      :states 'motion
-      "K" 'helpful-at-point
-      "M-/" 'evilnc-comment-or-uncomment-lines)
+   (global-set-key (kbd "<escape>") 'keyboard-escape-quit)
+   (global-set-key (kbd "C-;") 'embark-act)
+   (define-key minibuffer-mode-map (kbd "C-S-v") 'evil-paste-after)
+   (general-create-definer adi/leader-keys
+    :states '(normal visual emacs jpnb)
+    :keymaps 'override
+    :prefix "SPC")
+   (general-create-definer adi/leader-local-keys
+    :states '(normal visual emacs jpnb)
+    :keymaps 'override
+    :prefix "SPC m")
+   (adi/leader-keys
+       "SPC" 'find-file
+       "RET" 'denote-open-or-create)
+   (general-define-key
+       :states 'motion
+       "K" 'helpful-at-point
+       "M-/" 'evilnc-comment-or-uncomment-lines)
 #+end_src
 ** Magit Map
 #+begin_src emacs-lisp
@@ -786,13 +788,14 @@
 #+end_src
 ** Org Map
 #+begin_src emacs-lisp
-(general-define-key
-    :keymap 'org-mode-map
-    :states 'normal
-      "?\t" 'org-cycle
-      "<RET>" 'org-open-at-point)
-(adi/leader-local-keys org-mode-map
-    "lc" 'org-cliplink)
+  (general-define-key
+      :keymap 'org-mode-map
+      :states 'normal
+        "?\t" 'org-cycle
+        "<RET>" 'org-open-at-point
+        "C-c a" 'link-hint-copy-link-at-point)
+  (adi/leader-local-keys org-mode-map
+      "lc" 'org-cliplink)
 #+end_src
 ** Lsp Map
 #+begin_src emacs-lisp

@@ -2,6 +2,7 @@
 (setenv "LSP_USE_PLISTS" "1")
 (setq create-lockfiles nil)
 (setq recentf-max-menu-items 25)
+(setq revert-without-query '(".*"))
 (recentf-mode 1)
 (setq gc-cons-threshold 100000000)
 (setq read-process-output-max (* 1024 1024))
@@ -77,18 +78,16 @@
 
 (use-package evil
   :init
-  (progn
-      (setq evil-want-integration t) ;; This is optional since it's already set to t by default.
-      (setq evil-want-keybinding nil)
-      (setq evil-undo-system 'undo-fu))
+    (setq evil-want-integration t) ;; This is optional since it's already set to t by default.
+    (setq evil-want-keybinding nil)
+    (setq evil-undo-system 'undo-fu)
   :config
-  (progn
   (evil-mode 1))
-      (setq evil-move-cursor-back nil
-          evil-want-fine-undo t
-          evil-move-beyond-eol t
-          evil-vsplit-window-right t
-          evil-split-window-below t))
+(setq evil-move-cursor-back nil
+    evil-want-fine-undo t
+    evil-move-beyond-eol t
+    evil-vsplit-window-right t
+    evil-split-window-below t)
 
 (use-package general
   :config
@@ -105,7 +104,7 @@
     (emms-all)
     (setq emms-source-file-default-directory "~/Music/"
 	  emms-info-functions '(emms-info-native)
-	  emms-player-list '(emms-player-vlc)
+	  emms-player-list '(emms-player-mpv)
 	  emms-repeat-track t
 	  emms-mode-line-mode t
 	  emms-playlist-buffer-name "*Music*"
@@ -439,6 +438,8 @@
          (typescript-ts-mode . tide-hl-identifier-mode)
          (before-save . tide-format-before-save)))
 
+(use-package ccls)
+
 (use-package lsp-ui
   :hook (lsp-mode . lsp-ui-mode)
   :config
@@ -509,7 +510,7 @@
 
 (defun adi/org-setup()
     (org-indent-mode 1)
-    (org-toggle-pretty-entities 1))
+    (org-pretty-entities 1))
 (add-hook 'org-mode-hook 'adi/org-setup)
 
 (use-package evil-org)
@@ -554,10 +555,8 @@
     (delete-other-windows)
     (kill-matching-buffers "*.in")
     (evil-window-vsplit)
-    (other-window 1)
     (find-file (expand-file-name "inputf.in" default-directory))
     (evil-window-split)
-    (other-window 1)
     (find-file (expand-file-name "outputf.in" default-directory))
     (other-window 1)
     (enlarge-window-horizontally 40))
@@ -592,6 +591,7 @@
 
 (global-set-key (kbd "<escape>") 'keyboard-escape-quit)
 (global-set-key (kbd "C-;") 'embark-act)
+(define-key minibuffer-mode-map (kbd "C-S-v") 'evil-paste-after)
 (general-create-definer adi/leader-keys
  :states '(normal visual emacs jpnb)
  :keymaps 'override
@@ -622,7 +622,8 @@
     :keymap 'org-mode-map
     :states 'normal
       "?\t" 'org-cycle
-      "<RET>" 'org-open-at-point)
+      "<RET>" 'org-open-at-point
+      "C-c a" 'link-hint-copy-link-at-point)
 (adi/leader-local-keys org-mode-map
     "lc" 'org-cliplink)
 
