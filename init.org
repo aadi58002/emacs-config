@@ -51,6 +51,7 @@
 (setq dired-auto-revert-buffer #'dired-directory-changed-p) ; also see `dired-do-revert-buffer'
 (setq dired-make-directory-clickable t) ; Emacs 29.1
 (setq dired-free-space nil) ; Emacs 29.1
+(setq resize-mini-windows t)
 
 (add-hook 'dired-mode-hook #'hl-line-mode)
 (setq dired-isearch-filenames 'dwim)
@@ -84,22 +85,21 @@
 #+end_src
 * Package initialize
 #+begin_src emacs-lisp
-(require 'package)
-
-(setq package-archives '(("melpa" . "https://melpa.org/packages/")
-                         ("org" . "https://orgmode.org/elpa/")
-                         ("elpa" . "https://elpa.gnu.org/packages/")))
-
-(package-initialize)
-(unless package-archive-contents
- (package-refresh-contents))
-
-;; Initialize use-package on non-Linux platforms
-(unless (package-installed-p 'use-package)
-   (package-install 'use-package))
-
-(require 'use-package)
-(setq use-package-always-ensure t)
+(defvar bootstrap-version)
+(let ((bootstrap-file
+         (expand-file-name "straight/repos/straight.el/bootstrap.el" user-emacs-directory))
+        (bootstrap-version 6))
+    (unless (file-exists-p bootstrap-file)
+      (with-current-buffer
+          (url-retrieve-synchronously
+           "https://raw.githubusercontent.com/radian-software/straight.el/develop/install.el"
+           'silent 'inhibit-cookies)
+        (goto-char (point-max))
+        (eval-print-last-sexp)))
+    (load bootstrap-file nil 'nomessage))
+(setq-default straight-vc-git-default-clone-depth 1)
+(setq straight-use-package-by-default t) 
+(straight-use-package 'use-package)
 #+end_src
 
 * Packages
@@ -143,7 +143,7 @@
     (emms-all)
     (setq emms-source-file-default-directory "~/Music/"
 	  emms-info-functions '(emms-info-native)
-	  emms-player-list '(emms-player-mpv)
+	  emms-player-list '(emms-player-vlc)
 	  emms-repeat-track t
 	  emms-mode-line-mode t
 	  emms-playlist-buffer-name "*Music*"
@@ -156,7 +156,6 @@
 *** Helpful
 #+begin_src emacs-lisp
 (use-package helpful
-  :ensure t
     :config
         (global-set-key (kbd "C-h f") #'helpful-callable)
         (global-set-key (kbd "C-h v") #'helpful-variable)
@@ -191,7 +190,6 @@
 *** Doom theme
 #+begin_src emacs-lisp
 (use-package doom-themes
-    :ensure t
     :config
     ;; Global settings (defaults)
     (setq doom-themes-enable-bold t    ; if nil, bold is universally disabled
@@ -225,8 +223,16 @@
 #+end_src
 *** Doom modeline
 #+begin_src emacs-lisp
-(use-package doom-modeline
-  :init (doom-modeline-mode 1))
+  (use-package doom-modeline
+      :init (doom-modeline-mode 1)
+      :config
+       (display-battery-mode 1)
+       (setq doom-modeline-project-detection 'truncate-upto-project)
+       (setq doom-modeline-enable-word-count t)
+       (setq doom-modeline-buffer-encoding nil)
+       (setq doom-modeline-env-version t)
+       (setq doom-modeline-hud t)
+  )
 #+end_src
 *** All Icons Mode Line
 #+begin_src emacs-lisp
@@ -254,6 +260,10 @@
 (use-package emojify)
 #+end_src
 ** Completion
+*** Company
+#+begin_src emacs-lisp
+(use-package company)
+#+end_src
 *** Corfu
 #+begin_src emacs-lisp
 (use-package corfu
@@ -268,8 +278,7 @@
         corfu-quit-at-boundary 'insert
         )
   (global-corfu-mode 1)
-  (advice-add #'lsp-completion-at-point :around #'cape-wrap-noninterruptible)
-  (corfu-popupinfo-mode 1))
+  (advice-add #'lsp-completion-at-point :around #'cape-wrap-noninterruptible))
 #+end_src
 *** Emacs
 #+begin_src emacs-lisp
@@ -296,17 +305,18 @@
 (use-package cape
     :init
     (add-to-list 'completion-at-point-functions #'cape-file)
-    (add-to-list 'completion-at-point-functions #'cape-dabbrev))
+    (add-to-list 'completion-at-point-functions #'cape-dabbrev)
+    (add-to-list 'completion-at-point-functions #'(cape-company-to-capf #'company-yasnippet)))
+  
 #+end_src
 *** Vertico
 #+begin_src emacs-lisp
 (use-package vertico
-  :init
-  (setq vertico-count 20
-        vertico-resize nil
-        vertico-cycle t)
-  (vertico-mode)
-  (setq completion-styles '(substring orderless basic)))
+    :init
+    (setq vertico-count 20
+            vertico-resize nil
+            vertico-cycle t)
+    (vertico-mode))
 #+end_src
 *** Marginalia
 #+begin_src emacs-lisp
@@ -318,82 +328,87 @@
 #+end_src
 *** Embark
 #+begin_src emacs-lisp
+  (defun embark-act-noquit ()
+      "Run action but don't quit the minibuffer afterwards."
+      (interactive)
+      (let ((embark-quit-after-action nil))
+        (embark-act)))
+
 (use-package embark
-  :ensure t
-  :bind
-  (("C-;" . embark-act)         ;; pick some comfortable binding
-   ("M-." . embark-dwim)        ;; good alternative: M-.
-   ("C-h B" . embark-bindings)) ;; alternative for `describe-bindings'
+        :bind
+        (("C-;" . embark-act-noquit)         ;; pick some comfortable binding
+         ("M-." . embark-dwim)        ;; good alternative: M-.
+         ("C-h B" . embark-bindings)) ;; alternative for `describe-bindings'
 
-  :init
+        :init
 
-  ;; Optionally replace the key help with a completing-read interface
-  (setq prefix-help-command #'embark-prefix-help-command)
+        ;; Optionally replace the key help with a completing-read interface
+        (setq prefix-help-command #'embark-prefix-help-command)
 
-  :config
-  ;; (define-key embark-symbol-map "D" #'devdocs-lookup)
-  ;; (define-key embark-function-map "D" #'devdocs-lookup)
+        :config
+        ;; (define-key embark-symbol-map "D" #'devdocs-lookup)
+        ;; (define-key embark-function-map "D" #'devdocs-lookup)
 
-  ;; Hide the mode line of the Embark live/completions buffers
-  (add-to-list 'display-buffer-alist
-               '("\\`\\*Embark Collect \\(Live\\|Completions\\)\\*"
-                 nil
-                 (window-parameters (mode-line-format . none)))))
+        ;; Hide the mode line of the Embark live/completions buffers
+        (add-to-list 'display-buffer-alist
+                     '("\\`\\*Embark Collect \\(Live\\|Completions\\)\\*"
+                       nil
+                       (window-parameters (mode-line-format . none)))))
+    (defun embark-which-key-indicator ()
+      "An embark indicator that displays keymaps using which-key.
+    The which-key help message will show the type and value of the
+    current target followed by an ellipsis if there are further
+    targets."
+      (lambda (&optional keymap targets prefix)
+        (if (null keymap)
+            (which-key--hide-popup-ignore-command)
+          (which-key--show-keymap
+           (if (eq (plist-get (car targets) :type) 'embark-become)
+               "Become"
+             (format "Act on %s '%s'%s"
+                     (plist-get (car targets) :type)
+                     (embark--truncate-target (plist-get (car targets) :target))
+                     (if (cdr targets) "…" "")))
+           (if prefix
+               (pcase (lookup-key keymap prefix 'accept-default)
+                 ((and (pred keymapp) km) km)
+                 (_ (key-binding prefix 'accept-default)))
+             keymap)
+           nil nil t (lambda (binding)
+                       (not (string-suffix-p "-argument" (cdr binding))))))))
+
+    (setq embark-indicators
+      '(embark-which-key-indicator
+        embark-highlight-indicator
+        embark-isearch-highlight-indicator))
+
+    (defun embark-hide-which-key-indicator (fn &rest args)
+      "Hide the which-key indicator immediately when using the completing-read prompter."
+      (which-key--hide-popup-ignore-command)
+      (let ((embark-indicators
+             (remq #'embark-which-key-indicator embark-indicators)))
+          (apply fn args)))
+
+    (advice-add #'embark-completing-read-prompter
+                    :around #'embark-hide-which-key-indicator)
 #+end_src
 *** Embark Consult
 #+begin_src emacs-lisp
 (use-package embark-consult
-  :ensure t ; only need to install it, embark loads it after consult if found
   :hook
   (embark-collect-mode . consult-preview-at-point-mode))
 #+end_src
 *** Orderless
 #+begin_src emacs-lisp
 (use-package orderless
-:ensure t
-  :config
-  (defun +vertico-orderless-dispatch (pattern _index _total)
-    (cond
-     ;; Ensure $ works with Consult commands, which add disambiguation suffixes
-     ((string-suffix-p "$" pattern)
-      `(orderless-regexp . ,(concat (substring pattern 0 -1) "[\x200000-\x300000]*$")))
-     ;; Ignore single !
-     ((string= "!" pattern) `(orderless-literal . ""))
-     ;; Without literal
-     ((string-prefix-p "!" pattern) `(orderless-without-literal . ,(substring pattern 1)))
-     ;; Character folding
-     ((string-prefix-p "%" pattern) `(char-fold-to-regexp . ,(substring pattern 1)))
-     ((string-suffix-p "%" pattern) `(char-fold-to-regexp . ,(substring pattern 0 -1)))
-     ;; Initialism matching
-     ((string-prefix-p "`" pattern) `(orderless-initialism . ,(substring pattern 1)))
-     ((string-suffix-p "`" pattern) `(orderless-initialism . ,(substring pattern 0 -1)))
-     ;; Literal matching
-     ((string-prefix-p "=" pattern) `(orderless-literal . ,(substring pattern 1)))
-     ((string-suffix-p "=" pattern) `(orderless-literal . ,(substring pattern 0 -1)))
-     ;; Flex matching
-     ((string-prefix-p "~" pattern) `(orderless-flex . ,(substring pattern 1)))
-     ((string-suffix-p "~" pattern) `(orderless-flex . ,(substring pattern 0 -1)))))
-  (add-to-list
-   'completion-styles-alist
-   '(+vertico-basic-remote
-     +vertico-basic-remote-try-completion
-     +vertico-basic-remote-all-completions
-     "Use basic completion on remote files only"))
-  (setq completion-styles '(orderless basic flex)
-        completion-category-defaults nil
-        ;; note that despite override in the name orderless can still be used in
-        ;; find-file etc.
-        completion-category-overrides '((file (styles +vertico-basic-remote orderless partial-completion)))
-        orderless-style-dispatchers '(+vertico-orderless-dispatch)
-        orderless-component-separator "[ &]")
-  ;; ...otherwise find-file gets different highlighting than other commands
-  (setq orderless-matching-styles '(orderless-prefixes orderless-regexp orderless-flex))
-  (set-face-attribute 'completions-first-difference nil :inherit nil))
+    :custom
+    (orderless-matching-styles '(orderless-literal orderless-regexp orderless-flex))
+    (completion-styles '(orderless))
+    (completion-category-overrides '((file (styles partial-completion)))))
 #+end_src
 *** Consult
 #+begin_src emacs-lisp
 (use-package consult
-  :ensure t
   :bind (;; C-c bindings (mode-specific-map)
          ("C-c M-x" . consult-mode-command)
          ("C-c h" . consult-history)
@@ -463,6 +478,10 @@
    :preview-key '(:debounce 0.4 any))
   (setq consult-narrow-key "<")) ;; (kbd "C-+")
 #+end_src
+
+#+RESULTS:
+: consult-history
+
 *** Embark Consult
 #+begin_src emacs-lisp
 (use-package embark-consult
@@ -476,23 +495,23 @@
 #+end_src
 *** Lsp Mode
 #+begin_src emacs-lisp
-  (use-package lsp-mode
-    :ensure t
-    :custom
-    (lsp-completion-provider :none) ;; we use Corfu!
-    :init
-    (setq lsp-log-io nil)
-    (defun my/lsp-mode-setup-completion ()
-      (setf (alist-get 'styles (alist-get 'lsp-capf completion-category-defaults))
-            '(flex))) ;; Configure flex
-    :hook
-    (lsp-completion-mode . my/lsp-mode-setup-completion))
+        (use-package lsp-mode
+          :custom
+          (lsp-completion-provider :none)
+          :init
+          (setq lsp-log-io nil)
+          (defun my/lsp-mode-setup-completion ()
+            (setf (alist-get 'styles (alist-get 'lsp-capf completion-category-defaults))
+                  '(flex))) ;; Configure flex
+          :hook
+          (lsp-completion-mode . my/lsp-mode-setup-completion)
+          (prog-mode . lsp-mode)
+          (web-mode . lsp-mode))
 #+end_src
 *** Rust
 **** Rustic
 #+begin_src emacs-lisp
   (use-package rustic
-  :ensure t
     :config
       (setq 
           lsp-rust-analyzer-display-chaining-hints t
@@ -501,48 +520,43 @@
           lsp-rust-analyzer-server-display-inlay-hints t))
 #+end_src
 *** Typescript
+**** Typescript Mode
+#+begin_src emacs-lisp
+(use-package typescript-mode)
+#+end_src
 **** Web mode
 #+begin_src emacs-lisp
 (setq web-mode-markup-indent-offset 2)
 (setq web-mode-code-indent-offset 2)
 (setq web-mode-css-indent-offset 2)
 (use-package web-mode
-  :ensure t
-  :mode (("\\.js\\'" . web-mode)
-	 ("\\.jsx\\'" .  web-mode)
-	 ("\\.tsx\\'" .  web-mode)
-	 ("\\.ts\\'" . web-mode)
-	 ("\\.tsx\\'" . web-mode)
-	 ("\\.html\\'" . web-mode))
-  :commands web-mode)
+    :commands web-mode)
 #+end_src
-**** Flycheck
+**** Svelte Mode
 #+begin_src emacs-lisp
-(use-package flycheck)
-#+end_src
-**** Tide
-#+begin_src emacs-lisp
-    (defun setup-tide-mode ()
-      (interactive)
-      (tide-setup)
-      (flycheck-mode +1)
-      (setq flycheck-check-syntax-automatically '(save mode-enabled))
-      (eldoc-mode +1)
-      (tide-hl-identifier-mode +1))
-
-(add-hook 'tsx-ts-mode-hook #'setup-tide-mode)
-;; if you use treesitter based typescript-ts-mode (emacs 29+)
-(use-package tide
-  :ensure t
-  :after (flycheck)
-  :hook ((typescript-ts-mode . tide-setup)
-         (tsx-ts-mode . tide-setup)
-         (typescript-ts-mode . tide-hl-identifier-mode)
-         (before-save . tide-format-before-save)))
+(add-to-list 'auto-mode-alist '("\\.svelte\\'" . web-mode))
+(setq web-mode-engines-alist
+    '(("svelte" . "\\.svelte\\'")))
 #+end_src
 *** C/C++
 #+begin_src emacs-lisp
 (use-package ccls)
+#+end_src
+*** Solidity
+#+begin_src emacs-lisp
+(use-package solidity-mode)
+#+end_src
+*** Python
+#+begin_src emacs-lisp
+(use-package lsp-pyright
+  :hook (python-mode . (lambda ()
+                          (require 'lsp-pyright)
+                          (lsp))))
+#+end_src
+*** Flycheck
+#+begin_src emacs-lisp
+(use-package flycheck
+  :init (global-flycheck-mode))
 #+end_src
 *** Lsp ui
 #+begin_src emacs-lisp
@@ -566,23 +580,39 @@
           lsp-eldoc-enable-hover t 
           lsp-completion-show-detail t 
           lsp-completion-show-kind t 
-          lsp-ui-sideline-ignore-duplicate t
           lsp-ui-sideline-actions-icon lsp-ui-sideline-actions-icon-default))
 #+end_src
 *** Tree sitter
 #+begin_src emacs-lisp
-(use-package tree-sitter)
-(use-package tree-sitter-langs)
+  (use-package tree-sitter-langs
+        :after tree-sitter
+        :config
+        (tree-sitter-require 'tsx)
+        (tree-sitter-require 'typescript)
+        (tree-sitter-require 'rust)
+        (tree-sitter-require 'javascript)
+        (tree-sitter-require 'python)
+        (tree-sitter-require 'html)
+        (tree-sitter-require 'cpp)
+        (tree-sitter-require 'css)
+        (add-to-list 'tree-sitter-major-mode-language-alist '(typescript-ts-mode . tsx)))
+  (global-tree-sitter-mode)
+  (add-hook 'tree-sitter-after-on-hook #'tree-sitter-hl-mode)
 #+end_src
 *** Yasnippet
 #+begin_src emacs-lisp
 (use-package yasnippet
-  :ensure t
   :config
   (setq yas-snippet-dirs
       '("~/.config/emacs/snippets"))
 
 (yas-global-mode 1) ;; or M-x yas-reload-all if you've started YASnippet already.
+#+end_src
+*** Doom snippets
+#+begin_src emacs-lisp
+(use-package doom-snippets
+  :after yasnippet
+  :straight (doom-snippets :type git :host github :repo "hlissner/doom-snippets" :files ("*.el" "*")))
 #+end_src
 *** Magit
 #+begin_src emacs-lisp
@@ -635,8 +665,17 @@
 #+begin_src emacs-lisp
 (defun adi/org-setup()
     (org-indent-mode 1)
-    (org-pretty-entities 1))
+    (setq org-pretty-entities 1)
+    (setq org-confirm-babel-evaluate nil))
+
 (add-hook 'org-mode-hook 'adi/org-setup)
+(defadvice org-babel-execute-src-block (around load-language nil activate)
+    "Load language if needed"
+    (let ((language (org-element-property :language (org-element-at-point))))
+        (unless (cdr (assoc (intern language) org-babel-load-languages))
+        (add-to-list 'org-babel-load-languages (cons (intern language) t))
+        (org-babel-do-load-languages 'org-babel-load-languages org-babel-load-languages))
+        ad-do-it))
 #+end_src
 *** Evil org
 #+begin_src emacs-lisp
