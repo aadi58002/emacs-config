@@ -133,25 +133,31 @@
   :init
   (savehist-mode))
 
+(use-package dashboard
+        :after all-the-icons
+        :config
+        (setq dashboard-items '((recents  . 5)
+                                (agenda . 5)
+                                (projects . 5)))
+        (setq dashboard-set-heading-icons t)
+        (setq dashboard-banner-logo-title "")
+        (setq dashboard-set-footer nil)
+        (setq dashboard-set-file-icons t)
+        (setq dashboard-set-init-info t)
+        (setq initial-buffer-choice (lambda () (get-buffer-create "*dashboard*")))
+        (dashboard-setup-startup-hook))
+(add-hook 'server-after-make-frame-hook 'dashboard-refresh-buffer)
+
 (use-package which-key 
   :init
   (which-key-mode))
 
 (use-package doom-themes
     :config
-    ;; Global settings (defaults)
-    (setq doom-themes-enable-bold t    ; if nil, bold is universally disabled
-            doom-themes-enable-italic t) ; if nil, italics is universally disabled
+    (setq doom-themes-enable-bold t
+            doom-themes-enable-italic t)
     (load-theme 'doom-dracula t)
-
-    ;; Enable flashing mode-line on errors
     (doom-themes-visual-bell-config)
-    ;; Enable custom neotree theme (all-the-icons must be installed!)
-    (doom-themes-neotree-config)
-    ;; or for treemacs users
-    (setq doom-themes-treemacs-theme "doom-atom") ; use "doom-colors" for less minimal icon theme
-    (doom-themes-treemacs-config)
-    ;; Corrects (and improves) org-mode's native fontification.
     (doom-themes-org-config)
     (custom-set-faces
         '(doom-themes-visual-bell (( t(:background "#00FFFF"))))
@@ -231,7 +237,7 @@
     :init
     (add-to-list 'completion-at-point-functions #'cape-file)
     (add-to-list 'completion-at-point-functions #'cape-dabbrev)
-    (add-to-list 'completion-at-point-functions #'(cape-company-to-capf #'company-yasnippet)))
+    (add-to-list 'completion-at-point-functions (cape-company-to-capf #'company-yasnippet)))
 
 (use-package vertico
     :init
@@ -560,10 +566,31 @@
 (add-to-list 'org-structure-template-alist '("la" . "src latex"))
 (add-to-list 'org-structure-template-alist '("ec" . "src emacs-lisp"))
 
+(setq org-agenda-files (directory-files-recursively "~/Documents/Denote/Todo/" "\\.org$"))
+(setq org-agenda-window-setup 'current-window
+    org-agenda-start-day "-3d"
+    org-agenda-inhibit-startup t)
+
 (use-package denote
     :config
     (setq denote-directory "~/Documents/Denote")
-    (setq  denote-known-keywords '()))
+    (setq denote-known-keywords '())
+    (setq denote-infer-keywords t)
+    (setq denote-sort-keywords t)
+    (setq denote-excluded-directories-regexp nil)
+    (setq denote-excluded-keywords-regexp nil)
+    (setq denote-date-prompt-use-org-read-date t)
+    (setq denote-backlinks-show-context t))
+
+(with-eval-after-load 'org-capture
+  (add-to-list 'org-capture-templates
+               '("n" "New note (with Denote)" plain
+                 (file (concat (concat denote-directory "/Notes/") (file-name-nondirectory denote-last-path)))
+                 #'denote-org-capture-delete-empty-file
+                 :no-save t
+                 :immediate-finish nil
+                 :kill-buffer t
+                 :jump-to-captured t)))
 
 (defun kitty-async-process ()
     (interactive)
@@ -602,26 +629,26 @@
 
 ;; source: http://steve.yegge.googlepages.com/my-dot-emacs-file
 (defun copy-current-file (new-name)
-  "Copy current file to a NEW-NAME."
-  (interactive (list
+    "Copy current file to a NEW-NAME."
+    (interactive (list
                 (read-string "New name: " (current-kill 0) nil (current-kill 0))))
-  (let ((name (buffer-name))
+    (let ((name (buffer-name))
         (filename (buffer-file-name)))
     (if (not filename)
         (message "Buffer '%s' is not visiting a file!" name)
-      (if (get-buffer new-name)
-          (message "A buffer named '%s' already exists!" new-name)
-          (copy-file filename (concat (replace-regexp-in-string " " "" (capitalize (replace-regexp-in-string "[^[:word:]_]" " " new-name))) ".rs") 1)))))
+        (if (get-buffer new-name)
+            (message "A buffer named '%s' already exists!" new-name)
+            (copy-file filename (concat (replace-regexp-in-string " " "" (capitalize (replace-regexp-in-string "[^[:word:]_]" " " new-name))) ".rs") 1)))))
 
 (global-set-key (kbd "<escape>") 'keyboard-escape-quit)
 (global-set-key (kbd "C-;") 'embark-act)
 (define-key minibuffer-mode-map (kbd "C-S-v") 'evil-paste-after)
 (general-create-definer adi/leader-keys
- :states '(normal visual emacs jpnb)
+ :states '(normal visual emacs)
  :keymaps 'override
  :prefix "SPC")
 (general-create-definer adi/leader-local-keys
- :states '(normal visual emacs jpnb)
+ :states '(normal visual emacs)
  :keymaps 'override
  :prefix "SPC m")
 (adi/leader-keys
@@ -633,20 +660,46 @@
     "M-/" 'evilnc-comment-or-uncomment-lines)
 
 (adi/leader-keys
-    "gg" 'magit)
+     "z" 'org-agenda
+)
+
+(general-define-key
+    :keymaps 'dashboard-mode-map
+    :states '(normal visual emacs)
+    "RET" 'dashboard-return)
 
 (adi/leader-keys
-    "bb" 'consult-buffer
-    "bk" 'kill-this-buffer)
+    "g g" 'magit)
 
 (adi/leader-keys
-    "fr" 'consult-recent-file)
+   "n c" 'denote-create-note-in-subdirectory
+   "n j" 'my-denote-journal
+   "n n" 'denote
+   "n N" 'denote-type
+   "n d" 'denote-date
+   "n s" 'denote-subdirectory
+   "n t" 'denote-template
+   "n i" 'denote-link
+   "n I" 'denote-link-add-links
+   "n b" 'denote-link-backlinks
+   "n f f" 'denote-link-find-file
+   "n f b" 'denote-link-find-backlink
+   "n r" 'denote-rename-file
+   "n R" 'denote-rename-file-using-front-matter)
+
+(adi/leader-keys
+    "b b" 'consult-buffer
+    "b k" 'kill-this-buffer)
+
+(adi/leader-keys
+    "f r" 'consult-recent-file)
 
 (general-define-key
     :keymap 'org-mode-map
     :states 'normal
       "?\t" 'org-cycle
       "<RET>" 'org-open-at-point
+      "z i" '(org-toggle-inline-images :whick-key "inline images")
       "C-c a" 'link-hint-copy-link-at-point)
 (adi/leader-local-keys org-mode-map
     "lc" 'org-cliplink)
