@@ -5,6 +5,7 @@
 
 * Table of Content :toc:noexport:
 - [[#customized-default][Customized Default]]
+- [[#custom-function][Custom Function]]
 - [[#package-initialize][Package initialize]]
 - [[#packages][Packages]]
   - [[#keybindings][Keybindings]]
@@ -13,12 +14,13 @@
   - [[#completion][Completion]]
   - [[#coding][Coding]]
   - [[#org][Org]]
-- [[#custom-function][Custom Function]]
 - [[#keybindings-1][Keybindings]]
+  - [[#custom-function-map][Custom Function Map]]
   - [[#org-agenda][Org agenda]]
   - [[#dashboard-map][Dashboard Map]]
   - [[#magit-map][Magit Map]]
   - [[#denote-map][Denote Map]]
+  - [[#avy-map][Avy Map]]
   - [[#buffer-map][Buffer Map]]
   - [[#file-map][File Map]]
   - [[#org-map][Org Map]]
@@ -84,6 +86,72 @@
             global-auto-revert-mode 1
             global-auto-revert-non-file-buffers t)
 #+end_src
+* Custom Function
+*** Random Element from the list
+#+begin_src emacs-lisp
+(defun random-element-of-list (items)
+  (let* ((size (length items))
+         (index (random size)))
+    (nth index items)))
+#+end_src
+*** Kitty Async
+#+begin_src emacs-lisp
+    (defun kitty-async-process ()
+      (interactive)
+      (start-process "kitty" nil "setsid" "kitty" "-d" default-directory))
+#+end_src
+*** Brave Vscode docs
+#+begin_src emacs-lisp
+(defun brave-vscode-docs ()
+  (interactive)
+  (start-process "brave" nil "setsid" "brave" "--incognito" "https://code.visualstudio.com/api/language-extensions/language-server-extension-guide"))
+#+end_src
+*** Competitive layout
+#+begin_src emacs-lisp
+    (defun Competitive-coding-output-input-toggle ()
+      (interactive)
+      (delete-other-windows)
+      (kill-matching-buffers "*.in")
+      (evil-window-vsplit)
+      (find-file (expand-file-name "inputf.in" default-directory))
+      (evil-window-split)
+      (find-file (expand-file-name "outputf.in" default-directory))
+      (other-window 1)
+      (enlarge-window-horizontally 40))
+
+#+end_src
+*** Rust reset
+#+begin_src emacs-lisp
+  (defun rust-reset()
+    (interactive)
+    (widen)
+    (erase-buffer)
+    (insert "<cp")
+    (yas-expand)
+    (narrow-to-defun))
+#+end_src
+*** Rust paste input
+#+begin_src emacs-lisp
+    (defun code-input-refresh()
+      (interactive)
+      (write-region (current-kill 0) nil (concat default-directory "inputf.in") nil)
+      (Competitive-coding-output-input-toggle))
+#+end_src
+*** Copy current file
+#+begin_src emacs-lisp
+;; source: http://steve.yegge.googlepages.com/my-dot-emacs-file
+(defun copy-current-file (new-name)
+    "Copy current file to a NEW-NAME."
+    (interactive (list
+                (read-string "New name: " (current-kill 0) nil (current-kill 0))))
+    (let ((name (buffer-name))
+        (filename (buffer-file-name)))
+    (if (not filename)
+        (message "Buffer '%s' is not visiting a file!" name)
+        (if (get-buffer new-name)
+            (message "A buffer named '%s' already exists!" new-name)
+            (copy-file filename (concat (replace-regexp-in-string " " "" (capitalize (replace-regexp-in-string "[^[:word:]_]" " " new-name))) ".rs") 1)))))
+#+end_src
 * Package initialize
 #+begin_src emacs-lisp
 (defvar bootstrap-version)
@@ -107,20 +175,22 @@
 ** Keybindings
 *** Evil
 #+begin_src emacs-lisp
-(eval-when-compile (setq evil-want-keybinding nil))
+    (eval-when-compile (setq evil-want-keybinding nil))
 
-(use-package evil
-  :init
-    (setq evil-want-integration t) ;; This is optional since it's already set to t by default.
-    (setq evil-want-keybinding nil)
-    (setq evil-undo-system 'undo-fu)
-  :config
-  (evil-mode 1))
-(setq evil-move-cursor-back nil
-    evil-want-fine-undo t
-    evil-move-beyond-eol t
-    evil-vsplit-window-right t
-    evil-split-window-below t)
+    (use-package evil
+      :init
+        (setq evil-want-integration t) ;; This is optional since it's already set to t by default.
+        (setq evil-want-keybinding nil)
+        (setq evil-undo-system 'undo-fu)
+      :config
+      (evil-mode 1))
+  (setq evil-move-cursor-back nil
+      evil-want-fine-undo t
+      evil-move-beyond-eol t
+      evil-respect-visual-line-mode t
+      evil-org-retain-visual-state-on-shift t
+      evil-vsplit-window-right t
+      evil-split-window-below t)
 #+end_src
 *** General
 #+begin_src emacs-lisp
@@ -161,9 +231,14 @@
         (global-set-key (kbd "C-h f") #'helpful-callable)
         (global-set-key (kbd "C-h v") #'helpful-variable)
         (global-set-key (kbd "C-h k") #'helpful-key)
-        (global-set-key (kbd "C-c C-d") #'helpful-at-point)
         (global-set-key (kbd "C-h F") #'helpful-function)
         (global-set-key (kbd "C-h C") #'helpful-command))
+#+end_src
+*** Avy
+#+begin_src emacs-lisp
+(use-package avy
+     :config
+     (avy-setup-default))
 #+end_src
 *** Undo fu
 #+begin_src emacs-lisp
@@ -184,20 +259,23 @@
 ** UI
 *** Dashboard
 #+begin_src emacs-lisp
-(use-package dashboard
-        :after all-the-icons
-        :config
-        (setq dashboard-items '((recents  . 5)
-                                (agenda . 5)
-                                (projects . 5)))
-        (setq dashboard-set-heading-icons t)
-        (setq dashboard-banner-logo-title "")
-        (setq dashboard-set-footer nil)
-        (setq dashboard-set-file-icons t)
-        (setq dashboard-set-init-info t)
-        (setq initial-buffer-choice (lambda () (get-buffer-create "*dashboard*")))
-        (dashboard-setup-startup-hook))
-(add-hook 'server-after-make-frame-hook 'dashboard-refresh-buffer)
+  (setq banner-icons-list (file-expand-wildcards (concat user-emacs-directory "icons/*")))
+  (use-package dashboard
+          :after all-the-icons
+          :config
+          (setq dashboard-items '((recents  . 5)
+                                  (agenda . 5)
+                                  (projects . 5)))
+          (setq dashboard-set-heading-icons t)
+          (setq dashboard-startup-banner (random-element-of-list banner-icons-list))
+          (setq dashboard-banner-logo-title "")
+          (setq dashboard-image-banner-max-height 500)
+          (setq dashboard-set-footer nil)
+          (setq dashboard-set-file-icons t)
+          (setq dashboard-set-init-info t)
+          (setq initial-buffer-choice (lambda () (get-buffer-create "*dashboard*")))
+          (dashboard-setup-startup-hook))
+  (add-hook 'server-after-make-frame-hook 'dashboard-refresh-buffer)
 #+end_src
 *** Which Key
 #+begin_src emacs-lisp
@@ -625,7 +703,9 @@
 #+end_src
 *** Magit
 #+begin_src emacs-lisp
-(use-package magit)
+(use-package magit
+  :config
+    (setq magit-display-buffer-function #'magit-display-buffer-fullframe-status-v1))
 #+end_src
 *** Git gutter
 #+begin_src emacs-lisp
@@ -733,6 +813,7 @@
 *** Org Denote
 #+begin_src emacs-lisp
 (use-package denote
+    :straight (denote :type git :host github :repo "protesilaos/denote")
     :config
     (setq denote-directory "~/Documents/Denote")
     (setq denote-known-keywords '())
@@ -744,82 +825,39 @@
     (setq denote-backlinks-show-context t))
 
 (with-eval-after-load 'org-capture
-  (add-to-list 'org-capture-templates
-               '("n" "New note (with Denote)" plain
-                 (file (concat (concat denote-directory "/Notes/") (file-name-nondirectory denote-last-path)))
-                 #'denote-org-capture-delete-empty-file
-                 :no-save t
-                 :immediate-finish nil
-                 :kill-buffer t
-                 :jump-to-captured t)))
-
-#+end_src
-
-* Custom Function
-*** Kitty Async
-#+begin_src emacs-lisp
-    (defun kitty-async-process ()
-      (interactive)
-      (start-process "kitty" nil "setsid" "kitty" "-d" default-directory))
-  (define-key evil-normal-state-map "," 'kitty-async-process)
-
-#+end_src
-*** Brave Vscode docs
-#+begin_src emacs-lisp
-    (defun brave-vscode-docs ()
-      (interactive)
-      (start-process "brave" nil "setsid" "brave" "--incognito" "https://code.visualstudio.com/api/language-extensions/language-server-extension-guide"))
-
-#+end_src
-*** Competitive layout
-#+begin_src emacs-lisp
-    (defun Competitive-coding-output-input-toggle ()
-      (interactive)
-      (delete-other-windows)
-      (kill-matching-buffers "*.in")
-      (evil-window-vsplit)
-      (find-file (expand-file-name "inputf.in" default-directory))
-      (evil-window-split)
-      (find-file (expand-file-name "outputf.in" default-directory))
-      (other-window 1)
-      (enlarge-window-horizontally 40))
-  (evil-define-key 'normal c++-mode-map "C-c z" 'Competitive-coding-output-input-toggle)
-
-#+end_src
-*** Rust reset
-#+begin_src emacs-lisp
-  (defun rust-reset()
-    (interactive)
-    (widen)
-    (erase-buffer)
-    (insert "<cp")
-    (yas-expand)
-    (narrow-to-defun))
-
-#+end_src
-*** Rust paste input
-#+begin_src emacs-lisp
-    (defun code-input-refresh()
-      (interactive)
-      (write-region (current-kill 0) nil (concat default-directory "inputf.in") nil)
-      (Competitive-coding-output-input-toggle))
-  (evil-define-key 'normal c++-mode-map "C-c z" 'code-input-refresh)
-
-#+end_src
-*** Copy current file
-#+begin_src emacs-lisp
-;; source: http://steve.yegge.googlepages.com/my-dot-emacs-file
-(defun copy-current-file (new-name)
-    "Copy current file to a NEW-NAME."
-    (interactive (list
-                (read-string "New name: " (current-kill 0) nil (current-kill 0))))
-    (let ((name (buffer-name))
-        (filename (buffer-file-name)))
-    (if (not filename)
-        (message "Buffer '%s' is not visiting a file!" name)
-        (if (get-buffer new-name)
-            (message "A buffer named '%s' already exists!" new-name)
-            (copy-file filename (concat (replace-regexp-in-string " " "" (capitalize (replace-regexp-in-string "[^[:word:]_]" " " new-name))) ".rs") 1)))))
+    (add-to-list 'org-capture-templates
+               '("n" "Notes" plain
+                (file denote-last-path)
+                (function
+                    (lambda ()
+                        (let ((denote-directory (file-name-as-directory (concat (denote-directory) "Notes"))))
+                            (denote-org-capture))))
+                :no-save t
+                :immediate-finish nil
+                :kill-buffer t
+                :jump-to-captured t))
+    (add-to-list 'org-capture-templates
+               '("r" "Resources" plain
+                (file denote-last-path)
+                (function
+                    (lambda ()
+                        (let ((denote-directory (file-name-as-directory (concat (denote-directory) "Resources"))))
+                            (denote-org-capture))))
+                :no-save t
+                :immediate-finish nil
+                :kill-buffer t
+                :jump-to-captured t))
+    (add-to-list 'org-capture-templates
+               '("t" "Todo" plain
+                (file denote-last-path)
+                (function
+                    (lambda ()
+                        (let ((denote-directory (file-name-as-directory (concat (denote-directory) "Todo"))))
+                            (denote-org-capture))))
+                :no-save t
+                :immediate-finish nil
+                :kill-buffer t
+                :jump-to-captured t)))
 #+end_src
 * Keybindings
 #+begin_src emacs-lisp
@@ -842,11 +880,16 @@
       "K" 'helpful-at-point
       "M-/" 'evilnc-comment-or-uncomment-lines)
 #+end_src
+** Custom Function Map
+#+begin_src emacs-lisp
+(general-define-key
+  :states 'normal
+  "," 'kitty-async-process)
+#+end_src
 ** Org agenda
 #+begin_src emacs-lisp
 (adi/leader-keys
-     "z" 'org-agenda
-)
+     "z" 'org-agenda)
 #+end_src
 ** Dashboard Map
 #+begin_src emacs-lisp
@@ -877,6 +920,12 @@
    "n f b" 'denote-link-find-backlink
    "n r" 'denote-rename-file
    "n R" 'denote-rename-file-using-front-matter)
+#+end_src
+** Avy Map
+#+begin_src emacs-lisp
+(general-define-key
+    :states 'normal
+    "m" 'avy-goto-char)
 #+end_src
 ** Buffer Map
 #+begin_src emacs-lisp
@@ -909,9 +958,6 @@
         "K" 'lsp-describe-thing-at-point
         "C-c a" 'lsp-format-buffer)
 #+end_src
-
-#+RESULTS:
-
 *** Rustic Mode
 #+begin_src emacs-lisp
   (adi/leader-local-keys

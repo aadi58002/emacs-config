@@ -4,7 +4,7 @@
 (setq recentf-max-menu-items 25)
 (setq revert-without-query '(".*"))
 (recentf-mode 1)
-(setq gc-cons-threshold 100000000)
+(save-place-mode 1)
 (setq read-process-output-max (* 1024 1024))
 (set-default-coding-systems 'utf-8)
 (setq inhibit-startup-message t)
@@ -14,6 +14,8 @@
 (setq-default evil-shift-width tab-width)
 (setq-default indent-tabs-mode nil)
 (global-display-line-numbers-mode t)
+(setq custom-file (locate-user-emacs-file "custom.el"))
+(load custom-file 'noerror 'nomessage)
 (setq display-line-numbers-type 'relative
       scroll-margin 30)
 (setq electric-pair-preserve-balance nil)
@@ -41,10 +43,6 @@
 (setq dired-bind-info nil)
 (setq delete-by-moving-to-trash t
       +vertico-consult-fd-args "fd -p --color=never -i --type f -E node_modules --regex")
-(scroll-bar-mode -1)
-(tool-bar-mode -1)
-(menu-bar-mode -1)
-(tooltip-mode -1)
 (electric-pair-mode 1)
 (set-fringe-mode 10)
 (set-face-attribute 'default nil :font "JetBrains Mono" :height 100)
@@ -57,6 +55,56 @@
             window-combination-resize t
             global-auto-revert-mode 1
             global-auto-revert-non-file-buffers t)
+
+(defun random-element-of-list (items)
+  (let* ((size (length items))
+         (index (random size)))
+    (nth index items)))
+
+(defun kitty-async-process ()
+  (interactive)
+  (start-process "kitty" nil "setsid" "kitty" "-d" default-directory))
+
+(defun brave-vscode-docs ()
+  (interactive)
+  (start-process "brave" nil "setsid" "brave" "--incognito" "https://code.visualstudio.com/api/language-extensions/language-server-extension-guide"))
+
+(defun Competitive-coding-output-input-toggle ()
+  (interactive)
+  (delete-other-windows)
+  (kill-matching-buffers "*.in")
+  (evil-window-vsplit)
+  (find-file (expand-file-name "inputf.in" default-directory))
+  (evil-window-split)
+  (find-file (expand-file-name "outputf.in" default-directory))
+  (other-window 1)
+  (enlarge-window-horizontally 40))
+
+(defun rust-reset()
+  (interactive)
+  (widen)
+  (erase-buffer)
+  (insert "<cp")
+  (yas-expand)
+  (narrow-to-defun))
+
+(defun code-input-refresh()
+  (interactive)
+  (write-region (current-kill 0) nil (concat default-directory "inputf.in") nil)
+  (Competitive-coding-output-input-toggle))
+
+;; source: http://steve.yegge.googlepages.com/my-dot-emacs-file
+(defun copy-current-file (new-name)
+    "Copy current file to a NEW-NAME."
+    (interactive (list
+                (read-string "New name: " (current-kill 0) nil (current-kill 0))))
+    (let ((name (buffer-name))
+        (filename (buffer-file-name)))
+    (if (not filename)
+        (message "Buffer '%s' is not visiting a file!" name)
+        (if (get-buffer new-name)
+            (message "A buffer named '%s' already exists!" new-name)
+            (copy-file filename (concat (replace-regexp-in-string " " "" (capitalize (replace-regexp-in-string "[^[:word:]_]" " " new-name))) ".rs") 1)))))
 
 (defvar bootstrap-version)
 (let ((bootstrap-file
@@ -76,16 +124,18 @@
 
 (eval-when-compile (setq evil-want-keybinding nil))
 
-(use-package evil
-  :init
-    (setq evil-want-integration t) ;; This is optional since it's already set to t by default.
-    (setq evil-want-keybinding nil)
-    (setq evil-undo-system 'undo-fu)
-  :config
-  (evil-mode 1))
+  (use-package evil
+    :init
+      (setq evil-want-integration t) ;; This is optional since it's already set to t by default.
+      (setq evil-want-keybinding nil)
+      (setq evil-undo-system 'undo-fu)
+    :config
+    (evil-mode 1))
 (setq evil-move-cursor-back nil
     evil-want-fine-undo t
     evil-move-beyond-eol t
+    evil-respect-visual-line-mode t
+    evil-org-retain-visual-state-on-shift t
     evil-vsplit-window-right t
     evil-split-window-below t)
 
@@ -119,9 +169,12 @@
         (global-set-key (kbd "C-h f") #'helpful-callable)
         (global-set-key (kbd "C-h v") #'helpful-variable)
         (global-set-key (kbd "C-h k") #'helpful-key)
-        (global-set-key (kbd "C-c C-d") #'helpful-at-point)
         (global-set-key (kbd "C-h F") #'helpful-function)
         (global-set-key (kbd "C-h C") #'helpful-command))
+
+(use-package avy
+     :config
+     (avy-setup-default))
 
 (use-package undo-fu)
 
@@ -133,6 +186,7 @@
   :init
   (savehist-mode))
 
+(setq banner-icons-list (file-expand-wildcards (concat user-emacs-directory "icons/*")))
 (use-package dashboard
         :after all-the-icons
         :config
@@ -140,7 +194,9 @@
                                 (agenda . 5)
                                 (projects . 5)))
         (setq dashboard-set-heading-icons t)
+        (setq dashboard-startup-banner (random-element-of-list banner-icons-list))
         (setq dashboard-banner-logo-title "")
+        (setq dashboard-image-banner-max-height 500)
         (setq dashboard-set-footer nil)
         (setq dashboard-set-file-icons t)
         (setq dashboard-set-init-info t)
@@ -495,7 +551,9 @@
   :after yasnippet
   :straight (doom-snippets :type git :host github :repo "hlissner/doom-snippets" :files ("*.el" "*")))
 
-(use-package magit)
+(use-package magit
+  :config
+    (setq magit-display-buffer-function #'magit-display-buffer-fullframe-status-v1))
 
 (use-package git-gutter-fringe
     :config
@@ -572,6 +630,7 @@
     org-agenda-inhibit-startup t)
 
 (use-package denote
+    :straight (denote :type git :host github :repo "protesilaos/denote")
     :config
     (setq denote-directory "~/Documents/Denote")
     (setq denote-known-keywords '())
@@ -583,62 +642,39 @@
     (setq denote-backlinks-show-context t))
 
 (with-eval-after-load 'org-capture
-  (add-to-list 'org-capture-templates
-               '("n" "New note (with Denote)" plain
-                 (file (concat (concat denote-directory "/Notes/") (file-name-nondirectory denote-last-path)))
-                 #'denote-org-capture-delete-empty-file
-                 :no-save t
-                 :immediate-finish nil
-                 :kill-buffer t
-                 :jump-to-captured t)))
-
-(defun kitty-async-process ()
-    (interactive)
-    (start-process "kitty" nil "setsid" "kitty" "-d" default-directory))
-(define-key evil-normal-state-map "," 'kitty-async-process)
-
-(defun brave-vscode-docs ()
-  (interactive)
-  (start-process "brave" nil "setsid" "brave" "--incognito" "https://code.visualstudio.com/api/language-extensions/language-server-extension-guide"))
-
-(defun Competitive-coding-output-input-toggle ()
-    (interactive)
-    (delete-other-windows)
-    (kill-matching-buffers "*.in")
-    (evil-window-vsplit)
-    (find-file (expand-file-name "inputf.in" default-directory))
-    (evil-window-split)
-    (find-file (expand-file-name "outputf.in" default-directory))
-    (other-window 1)
-    (enlarge-window-horizontally 40))
-(evil-define-key 'normal c++-mode-map "C-c z" 'Competitive-coding-output-input-toggle)
-
-(defun rust-reset()
-  (interactive)
-  (widen)
-  (erase-buffer)
-  (insert "<cp")
-  (yas-expand)
-  (narrow-to-defun))
-
-(defun code-input-refresh()
-    (interactive)
-    (write-region (current-kill 0) nil (concat default-directory "inputf.in") nil)
-    (Competitive-coding-output-input-toggle))
-(evil-define-key 'normal c++-mode-map "C-c z" 'code-input-refresh)
-
-;; source: http://steve.yegge.googlepages.com/my-dot-emacs-file
-(defun copy-current-file (new-name)
-    "Copy current file to a NEW-NAME."
-    (interactive (list
-                (read-string "New name: " (current-kill 0) nil (current-kill 0))))
-    (let ((name (buffer-name))
-        (filename (buffer-file-name)))
-    (if (not filename)
-        (message "Buffer '%s' is not visiting a file!" name)
-        (if (get-buffer new-name)
-            (message "A buffer named '%s' already exists!" new-name)
-            (copy-file filename (concat (replace-regexp-in-string " " "" (capitalize (replace-regexp-in-string "[^[:word:]_]" " " new-name))) ".rs") 1)))))
+    (add-to-list 'org-capture-templates
+               '("n" "Notes" plain
+                (file denote-last-path)
+                (function
+                    (lambda ()
+                        (let ((denote-directory (file-name-as-directory (concat (denote-directory) "Notes"))))
+                            (denote-org-capture))))
+                :no-save t
+                :immediate-finish nil
+                :kill-buffer t
+                :jump-to-captured t))
+    (add-to-list 'org-capture-templates
+               '("r" "Resources" plain
+                (file denote-last-path)
+                (function
+                    (lambda ()
+                        (let ((denote-directory (file-name-as-directory (concat (denote-directory) "Resources"))))
+                            (denote-org-capture))))
+                :no-save t
+                :immediate-finish nil
+                :kill-buffer t
+                :jump-to-captured t))
+    (add-to-list 'org-capture-templates
+               '("t" "Todo" plain
+                (file denote-last-path)
+                (function
+                    (lambda ()
+                        (let ((denote-directory (file-name-as-directory (concat (denote-directory) "Todo"))))
+                            (denote-org-capture))))
+                :no-save t
+                :immediate-finish nil
+                :kill-buffer t
+                :jump-to-captured t)))
 
 (global-set-key (kbd "<escape>") 'keyboard-escape-quit)
 (global-set-key (kbd "C-;") 'embark-act)
@@ -659,9 +695,12 @@
     "K" 'helpful-at-point
     "M-/" 'evilnc-comment-or-uncomment-lines)
 
+(general-define-key
+  :states 'normal
+  "," 'kitty-async-process)
+
 (adi/leader-keys
-     "z" 'org-agenda
-)
+     "z" 'org-agenda)
 
 (general-define-key
     :keymaps 'dashboard-mode-map
@@ -686,6 +725,10 @@
    "n f b" 'denote-link-find-backlink
    "n r" 'denote-rename-file
    "n R" 'denote-rename-file-using-front-matter)
+
+(general-define-key
+    :states 'normal
+    "m" 'avy-goto-char)
 
 (adi/leader-keys
     "b b" 'consult-buffer
