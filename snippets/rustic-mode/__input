@@ -1,7 +1,0 @@
-# -*- mode: snippet -*-
-# name: Problem Input
-# key: <in
-# condition: t
-# --
-let ${1:problem} = sc.next::<${2:usize}>();
-$0

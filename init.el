@@ -124,20 +124,20 @@
 
 (eval-when-compile (setq evil-want-keybinding nil))
 
-  (use-package evil
-    :init
-      (setq evil-want-integration t) ;; This is optional since it's already set to t by default.
-      (setq evil-want-keybinding nil)
-      (setq evil-undo-system 'undo-fu)
-    :config
-    (evil-mode 1))
-(setq evil-move-cursor-back nil
-    evil-want-fine-undo t
-    evil-move-beyond-eol t
-    evil-respect-visual-line-mode t
-    evil-org-retain-visual-state-on-shift t
-    evil-vsplit-window-right t
-    evil-split-window-below t)
+(use-package evil
+      :init
+        (setq evil-want-integration t) ;; This is optional since it's already set to t by default.
+        (setq evil-want-keybinding nil)
+        (setq evil-undo-system 'undo-fu)
+      :config
+      (evil-mode 1))
+  (setq evil-move-cursor-back nil
+      evil-want-fine-undo t
+      evil-move-beyond-eol t
+      evil-respect-visual-line-mode t
+      evil-org-retain-visual-state-on-shift t
+      evil-vsplit-window-right t
+      evil-split-window-below t)
 
 (use-package general
   :config
@@ -148,19 +148,62 @@
     :config
     (evil-collection-init))
 
+(use-package notmuch)
+
+(use-package docker
+   :config
+   (setq tramp-docker-program "podman"
+         docker-command "podman"
+         docker-composee-command "podman-compose"
+         tramp-docker-method "podman"))
+
+(use-package ace-window
+    :config
+    (setq aw-keys '(?a ?s ?d ?f ?g ?h ?j ?k ?l)))
+
+(use-package pulsar
+   :config
+   (setq pulsar-pulse t)
+   (setq pulsar-delay 0.055)
+   (setq pulsar-iterations 10)
+   (setq pulsar-face 'pulsar-magenta)
+   (setq pulsar-highlight-face 'pulsar-yellow)
+   (add-hook 'next-error-hook #'pulsar-pulse-line)
+   (add-hook 'consult-after-jump-hook #'pulsar-recenter-top)
+   (add-hook 'consult-after-jump-hook #'pulsar-reveal-entry)
+   (pulsar-global-mode 1))
+
+(use-package vimish-fold)
+
+(use-package ligature
+  :config
+  (ligature-set-ligatures 'prog-mode '("-|" "-~" "---" "-<<" "-<" "--" "->" "->>" "-->" "///" "/=" "/=="
+                                      "/>" "//" "/*" "*>" "***" "*/" "<-" "<<-" "<=>" "<=" "<|" "<||"
+                                      "<|||" "<|>" "<:" "<>" "<-<" "<<<" "<==" "<<=" "<=<" "<==>" "<-|"
+                                      "<<" "<~>" "<=|" "<~~" "<~" "<$>" "<$" "<+>" "<+" "</>" "</" "<*"
+                                      "<*>" "<->" "<!--" ":>" ":<" ":::" "::" ":?" ":?>" ":=" "::=" "=>>"
+                                      "==>" "=/=" "=!=" "=>" "===" "=:=" "==" "!==" "!!" "!=" ">]" ">:"
+                                      ">>-" ">>=" ">=>" ">>>" ">-" ">=" "&&&" "&&" "|||>" "||>" "|>" "|]"
+                                      "|}" "|=>" "|->" "|=" "||-" "|-" "||=" "||" ".." ".?" ".=" ".-" "..<"
+                                      "..." "+++" "+>" "++" "[||]" "[<" "[|" "{|" "??" "?." "?=" "?:" "##"
+                                      "###" "####" "#[" "#{" "#=" "#!" "#:" "#_(" "#_" "#?" "#(" ";;" "_|_"
+                                      "__" "~~" "~~>" "~>" "~-" "~@" "$>" "^=" "]#"))
+  (global-prettify-symbols-mode)
+  (global-ligature-mode t))
+
 (use-package emms
   :init
     (require 'emms-setup)
     (emms-all)
     (setq emms-source-file-default-directory "~/Music/"
-	  emms-info-functions '(emms-info-native)
-	  emms-player-list '(emms-player-vlc)
-	  emms-repeat-track t
-	  emms-mode-line-mode t
-	  emms-playlist-buffer-name "*Music*"
-	  emms-playing-time-mode t
-	  emms-info-asynchronously t
-	  emms-source-file-directory-tree-function 'emms-source-file-directory-tree-find)
+          emms-info-functions '(emms-info-native)
+          emms-player-list '(emms-player-mpv)
+          emms-repeat-track t
+          emms-mode-line-mode t
+          emms-playlist-buffer-name "*Music*"
+          emms-playing-time-mode t
+          emms-info-asynchronously t
+          emms-source-file-directory-tree-function 'emms-source-file-directory-tree-find)
     (emms-add-directory-tree "~/Music/")
     (emms-add-directory-tree "~/Videos/Test Video"))
 
@@ -174,12 +217,13 @@
 
 (use-package avy
      :config
+     (setq avy-background t)
      (avy-setup-default))
 
 (use-package undo-fu)
 
 (use-package undohist
-  :config
+    :config
     (undohist-initialize))
 
 (use-package savehist
@@ -237,8 +281,7 @@
      (setq doom-modeline-enable-word-count t)
      (setq doom-modeline-buffer-encoding nil)
      (setq doom-modeline-env-version t)
-     (setq doom-modeline-hud t)
-)
+     (setq doom-modeline-hud t))
 
 (use-package all-the-icons)
 
@@ -246,6 +289,13 @@
       :config
       (all-the-icons-completion-mode)
       (add-hook 'marginalia-mode-hook #'all-the-icons-completion-marginalia-setup))
+
+(use-package kind-icon
+  :after corfu
+  :custom
+  (kind-icon-default-face 'corfu-default) ; to compute blended backgrounds correctly
+  :config
+  (add-to-list 'corfu-margin-formatters #'kind-icon-margin-formatter))
 
 (use-package all-the-icons-dired
   :config
@@ -255,19 +305,152 @@
 
 (use-package emojify)
 
+(use-package evil-nerd-commenter)
+
+(use-package lsp-mode
+  :custom
+  (lsp-completion-provider :none)
+  :init
+  (setq lsp-log-io nil)
+  (defun my/lsp-mode-setup-completion ()
+    (setf (alist-get 'styles (alist-get 'lsp-capf completion-category-defaults))
+          '(flex))) ;; Configure flex
+  :hook
+  (lsp-completion-mode . my/lsp-mode-setup-completion)
+  (prog-mode . lsp-mode)
+  (web-mode . lsp-mode))
+
+(use-package rustic
+  :config
+    (setq 
+        lsp-rust-analyzer-display-chaining-hints t
+        lsp-rust-analyzer-expand-macro t
+        lsp-rust-analyzer-display-parameter-hints t
+        lsp-rust-analyzer-server-display-inlay-hints t))
+
+(use-package typescript-mode)
+
+(setq web-mode-markup-indent-offset 2)
+(setq web-mode-code-indent-offset 2)
+(setq web-mode-css-indent-offset 2)
+(use-package web-mode
+    :commands web-mode)
+
+(add-to-list 'auto-mode-alist '("\\.svelte\\'" . web-mode))
+(setq web-mode-engines-alist
+    '(("svelte" . "\\.svelte\\'")))
+
+(use-package ccls)
+
+(use-package solidity-mode)
+
+(use-package lsp-pyright
+  :hook (python-mode . (lambda ()
+                          (require 'lsp-pyright)
+                          (lsp))))
+
+(use-package flycheck
+  :init (global-flycheck-mode))
+
+(use-package format-all
+   :config
+   (add-hook 'prog-mode-hook 'format-all-mode)
+   (add-hook 'format-all-mode-hook 'format-all-ensure-formatter))
+
+(use-package lsp-ui
+  :hook (lsp-mode . lsp-ui-mode)
+  :config
+  (setq lsp-ui-peek-enable t
+        lsp-ui-doc-position 'bottom
+        lsp-ui-peek-always-show t
+        lsp-signature-auto-activate t
+        lsp-ui-doc-delay 0.0
+        lsp-ui-sideline-show-diagnostics t 
+        lsp-enable-symbol-highlighting t 
+        lsp-ui-doc-enable t 
+        lsp-ui-doc-show-with-cursor t 
+        lsp-ui-doc-show-with-mouse t 
+        lsp-lens-enable t 
+        lsp-headerline-breadcrumb-enable t 
+        lsp-ui-sideline-show-diagnostics t 
+        lsp-modeline-code-actions-enable t 
+        lsp-eldoc-enable-hover t 
+        lsp-completion-show-detail t 
+        lsp-completion-show-kind t 
+        lsp-ui-sideline-actions-icon lsp-ui-sideline-actions-icon-default))
+
+(use-package tree-sitter-langs
+      :after tree-sitter
+      :config
+      (tree-sitter-require 'tsx)
+      (tree-sitter-require 'typescript)
+      (tree-sitter-require 'rust)
+      (tree-sitter-require 'javascript)
+      (tree-sitter-require 'python)
+      (tree-sitter-require 'html)
+      (tree-sitter-require 'cpp)
+      (tree-sitter-require 'css)
+      (add-to-list 'tree-sitter-major-mode-language-alist '(typescript-ts-mode . tsx)))
+(global-tree-sitter-mode)
+(add-hook 'tree-sitter-after-on-hook #'tree-sitter-hl-mode)
+
+(use-package yasnippet
+  :config
+  (setq yas-snippet-dirs
+      '("~/.config/emacs/snippets"))
+(yas-global-mode 1))
+
+(use-package doom-snippets
+  :after yasnippet
+  :straight (doom-snippets :type git :host github :repo "hlissner/doom-snippets" :files ("*.el" "*")))
+
+(use-package magit
+  :config
+    (setq magit-display-buffer-function #'magit-display-buffer-fullframe-status-v1))
+
+(use-package git-gutter-fringe
+    :config
+    (global-git-gutter-mode +1)
+    (setq-default fringes-outside-margins t)
+        ;; thin fringe bitmaps
+        (define-fringe-bitmap 'git-gutter-fr:added [224]
+        nil nil '(center repeated))
+        (define-fringe-bitmap 'git-gutter-fr:modified [224]
+        nil nil '(center repeated))
+        (define-fringe-bitmap 'git-gutter-fr:deleted [128 192 224 240]
+        nil nil 'bottom))
+
+(use-package smart-compile
+  :config
+  (setq smart-compile-check-build-system 'nil)
+  (add-to-list 'smart-compile-alist '("\\.[Cc]+[Pp]*\\'" . "make %n && touch inputf.in && timeout 4s ./%n < inputf.in &> outputf.in "))
+  (add-to-list 'smart-compile-alist  '("\\.rs$" . "touch inputf.in && cargo run -q < inputf.in &> outputf.in ")))
+
+(use-package evil-multiedit
+    :config
+    (evil-multiedit-default-keybinds))
+
+(use-package projectile
+  :init
+  (projectile-mode +1)
+  :bind (:map projectile-mode-map
+              ("s-p" . projectile-command-map)
+              ("C-c p" . projectile-command-map)))
+
+(use-package rainbow-delimiters
+  :hook (prog-mode . rainbow-delimiters-mode))
+
 (use-package company)
 
 (use-package corfu
   :init
-  (global-corfu-mode)
   ;; Setup corfu for popup like completion
   (setq corfu-cycle t  ; Allows cycling through candidates
         corfu-auto t   ; Enable auto completion
-        corfu-auto-prefix 0  ; Complete with less prefix keys
+        corfu-auto-prefix 1  ; Complete with less prefix keys
         corfu-auto-delay 0.0  ; No delay for completion
-        corfu-echo-documentation 0.25  ; Echo docs for current completion option
-        corfu-quit-at-boundary 'insert
-        )
+        corfu-echo-documentation 0.0  ; Echo docs for current completion option
+        corfu-quit-at-boundary 'insert)
   (global-corfu-mode 1)
   (advice-add #'lsp-completion-at-point :around #'cape-wrap-noninterruptible))
 
@@ -291,9 +474,9 @@
 
 (use-package cape
     :init
+    (add-to-list 'completion-at-point-functions (cape-company-to-capf #'company-yasnippet))
     (add-to-list 'completion-at-point-functions #'cape-file)
-    (add-to-list 'completion-at-point-functions #'cape-dabbrev)
-    (add-to-list 'completion-at-point-functions (cape-company-to-capf #'company-yasnippet)))
+    (add-to-list 'completion-at-point-functions #'cape-dabbrev))
 
 (use-package vertico
     :init
@@ -321,15 +504,8 @@
          ("C-h B" . embark-bindings)) ;; alternative for `describe-bindings'
 
         :init
-
-        ;; Optionally replace the key help with a completing-read interface
         (setq prefix-help-command #'embark-prefix-help-command)
-
         :config
-        ;; (define-key embark-symbol-map "D" #'devdocs-lookup)
-        ;; (define-key embark-function-map "D" #'devdocs-lookup)
-
-        ;; Hide the mode line of the Embark live/completions buffers
         (add-to-list 'display-buffer-alist
                      '("\\`\\*Embark Collect \\(Live\\|Completions\\)\\*"
                        nil
@@ -456,137 +632,6 @@
   :hook
   (embark-collect-mode . consult-preview-at-point-mode))
 
-(use-package evil-nerd-commenter)
-
-(use-package lsp-mode
-  :custom
-  (lsp-completion-provider :none)
-  :init
-  (setq lsp-log-io nil)
-  (defun my/lsp-mode-setup-completion ()
-    (setf (alist-get 'styles (alist-get 'lsp-capf completion-category-defaults))
-          '(flex))) ;; Configure flex
-  :hook
-  (lsp-completion-mode . my/lsp-mode-setup-completion)
-  (prog-mode . lsp-mode)
-  (web-mode . lsp-mode))
-
-(use-package rustic
-  :config
-    (setq 
-        lsp-rust-analyzer-display-chaining-hints t
-        lsp-rust-analyzer-expand-macro t
-        lsp-rust-analyzer-display-parameter-hints t
-        lsp-rust-analyzer-server-display-inlay-hints t))
-
-(use-package typescript-mode)
-
-(setq web-mode-markup-indent-offset 2)
-(setq web-mode-code-indent-offset 2)
-(setq web-mode-css-indent-offset 2)
-(use-package web-mode
-    :commands web-mode)
-
-(add-to-list 'auto-mode-alist '("\\.svelte\\'" . web-mode))
-(setq web-mode-engines-alist
-    '(("svelte" . "\\.svelte\\'")))
-
-(use-package ccls)
-
-(use-package solidity-mode)
-
-(use-package lsp-pyright
-  :hook (python-mode . (lambda ()
-                          (require 'lsp-pyright)
-                          (lsp))))
-
-(use-package flycheck
-  :init (global-flycheck-mode))
-
-(use-package lsp-ui
-  :hook (lsp-mode . lsp-ui-mode)
-  :config
-  (setq lsp-ui-peek-enable t
-        lsp-ui-doc-position 'bottom
-        lsp-ui-peek-always-show t
-        lsp-signature-auto-activate t
-        lsp-ui-doc-delay 0.0
-        lsp-ui-sideline-show-diagnostics t 
-        lsp-enable-symbol-highlighting t 
-        lsp-ui-doc-enable t 
-        lsp-ui-doc-show-with-cursor t 
-        lsp-ui-doc-show-with-mouse t 
-        lsp-lens-enable t 
-        lsp-headerline-breadcrumb-enable t 
-        lsp-ui-sideline-show-diagnostics t 
-        lsp-modeline-code-actions-enable t 
-        lsp-eldoc-enable-hover t 
-        lsp-completion-show-detail t 
-        lsp-completion-show-kind t 
-        lsp-ui-sideline-actions-icon lsp-ui-sideline-actions-icon-default))
-
-(use-package tree-sitter-langs
-      :after tree-sitter
-      :config
-      (tree-sitter-require 'tsx)
-      (tree-sitter-require 'typescript)
-      (tree-sitter-require 'rust)
-      (tree-sitter-require 'javascript)
-      (tree-sitter-require 'python)
-      (tree-sitter-require 'html)
-      (tree-sitter-require 'cpp)
-      (tree-sitter-require 'css)
-      (add-to-list 'tree-sitter-major-mode-language-alist '(typescript-ts-mode . tsx)))
-(global-tree-sitter-mode)
-(add-hook 'tree-sitter-after-on-hook #'tree-sitter-hl-mode)
-
-(use-package yasnippet
-  :config
-  (setq yas-snippet-dirs
-      '("~/.config/emacs/snippets"))
-
-(yas-global-mode 1) ;; or M-x yas-reload-all if you've started YASnippet already.
-
-(use-package doom-snippets
-  :after yasnippet
-  :straight (doom-snippets :type git :host github :repo "hlissner/doom-snippets" :files ("*.el" "*")))
-
-(use-package magit
-  :config
-    (setq magit-display-buffer-function #'magit-display-buffer-fullframe-status-v1))
-
-(use-package git-gutter-fringe
-    :config
-    (global-git-gutter-mode +1)
-    (setq-default fringes-outside-margins t)
-        ;; thin fringe bitmaps
-        (define-fringe-bitmap 'git-gutter-fr:added [224]
-        nil nil '(center repeated))
-        (define-fringe-bitmap 'git-gutter-fr:modified [224]
-        nil nil '(center repeated))
-        (define-fringe-bitmap 'git-gutter-fr:deleted [128 192 224 240]
-        nil nil 'bottom))
-
-(use-package smart-compile
-  :config
-  (setq smart-compile-check-build-system 'nil)
-  (add-to-list 'smart-compile-alist '("\\.[Cc]+[Pp]*\\'" . "make %n && touch inputf.in && timeout 4s ./%n < inputf.in &> outputf.in "))
-  (add-to-list 'smart-compile-alist  '("\\.rs$" . "touch inputf.in && cargo run -q < inputf.in &> outputf.in "))))
-
-(use-package evil-multiedit
-    :config
-    (evil-multiedit-default-keybinds))
-
-(use-package projectile
-  :init
-  (projectile-mode +1)
-  :bind (:map projectile-mode-map
-              ("s-p" . projectile-command-map)
-              ("C-c p" . projectile-command-map)))
-
-(use-package rainbow-delimiters
-  :hook (prog-mode . rainbow-delimiters-mode))
-
 (defun adi/org-setup()
     (org-indent-mode 1)
     (setq org-pretty-entities 1)
@@ -610,11 +655,26 @@
 (use-package toc-org)  
 (add-hook 'org-mode-hook (lambda () (toc-org-mode 1)))
 
-(use-package org-superstar)
-(add-hook 'org-mode-hook (lambda () (org-superstar-mode 1)))
-
-(use-package org-appear)
-(add-hook 'org-mode-hook 'org-appear-mode)
+(use-package org-modern
+   :config
+    (setq
+        org-auto-align-tags nil
+        org-tags-column 0
+        org-catch-invisible-edits 'show-and-error
+        org-special-ctrl-a/e t
+        org-insert-heading-respect-content t
+        org-hide-emphasis-markers t
+        org-pretty-entities t
+        org-ellipsis "…"
+        org-agenda-tags-column 0
+        org-agenda-block-separator ?─
+        org-agenda-time-grid
+        '((daily today require-timed)
+            (800 1000 1200 1400 1600 1800 2000)
+            " ┄┄┄┄┄ " "┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄")
+            org-agenda-current-time-string
+            "⭠ now ─────────────────────────────────────────────────")
+        (global-org-modern-mode))
 
 (setq org-todo-keywords
     '((sequence "TODO(t)" "PROJ(p)" "ACTIVE(a)" "REVIEW(r)" "START(s)" "NEXT(n)" "WORKING(w)" "HOLD(h)" "|" "DONE(d)" "KILL(k)")
@@ -678,16 +738,19 @@
 
 (global-set-key (kbd "<escape>") 'keyboard-escape-quit)
 (global-set-key (kbd "C-;") 'embark-act)
+(general-define-key
+    :keymaps 'evil-window-map
+    "C-w" 'ace-window)
 (define-key minibuffer-mode-map (kbd "C-S-v") 'evil-paste-after)
-(general-create-definer adi/leader-keys
- :states '(normal visual emacs)
- :keymaps 'override
- :prefix "SPC")
-(general-create-definer adi/leader-local-keys
- :states '(normal visual emacs)
- :keymaps 'override
- :prefix "SPC m")
-(adi/leader-keys
+(general-create-definer aadi/leader-keys
+    :states '(normal visual emacs)
+    :keymaps 'override
+    :prefix "SPC")
+(general-create-definer aadi/leader-local-keys
+    :states '(normal visual emacs)
+    :keymaps 'override
+    :prefix "SPC m")
+(aadi/leader-keys
     "SPC" 'find-file
     "RET" 'denote-open-or-create)
 (general-define-key
@@ -699,7 +762,7 @@
   :states 'normal
   "," 'kitty-async-process)
 
-(adi/leader-keys
+(aadi/leader-keys
      "z" 'org-agenda)
 
 (general-define-key
@@ -707,10 +770,12 @@
     :states '(normal visual emacs)
     "RET" 'dashboard-return)
 
-(adi/leader-keys
+(aadi/leader-keys
+    "g" '(:ignore t :which-key "magit")
     "g g" 'magit)
 
-(adi/leader-keys
+(aadi/leader-keys
+   "n" '(:ignore t :which-key "denote")
    "n c" 'denote-create-note-in-subdirectory
    "n j" 'my-denote-journal
    "n n" 'denote
@@ -728,34 +793,51 @@
 
 (general-define-key
     :states 'normal
-    "m" 'avy-goto-char)
+    "m" '(avy-goto-char :which-key "avy goto char"))
 
-(adi/leader-keys
+(aadi/leader-keys
+    "b" '(:ignore t :which-key "buffer")
     "b b" 'consult-buffer
     "b k" 'kill-this-buffer)
 
-(adi/leader-keys
+(aadi/leader-keys
+    "f" '(:ignore t :which-key "files")
     "f r" 'consult-recent-file)
 
 (general-define-key
-    :keymap 'org-mode-map
+    :keymaps 'org-mode-map
     :states 'normal
-      "?\t" 'org-cycle
-      "<RET>" 'org-open-at-point
-      "z i" '(org-toggle-inline-images :whick-key "inline images")
-      "C-c a" 'link-hint-copy-link-at-point)
-(adi/leader-local-keys org-mode-map
-    "lc" 'org-cliplink)
+    "?\t" 'org-cycle
+    "<RET>" 'org-open-at-point
+    "C-c a" 'link-hint-copy-link-at-point
+    "z i" '(org-toggle-inline-images :whick-key "inline images"))
 
+(aadi/leader-keys org-mode-map
+    "m" '(:ignore t :which-key "localleader"))
+(aadi/leader-local-keys org-mode-map
+    "l" '(:ignore t :which-key "link")
+    "l c" 'org-cliplink)
+
+(aadi/leader-keys lsp-mode-map
+    "m" '(:ignore t :which-key "localleader"))
 (general-define-key
-    :keymap 'lsp-mode-map
+    :keymaps 'lsp-mode-map
     :states 'normal
-      "K" 'lsp-describe-thing-at-point
-      "C-c a" 'lsp-format-buffer)
+    "K" 'lsp-describe-thing-at-point
+    "C-c a" 'format-all-buffer)
 
-(adi/leader-local-keys
-    :keymap 'rustic-mode-map
+(aadi/leader-local-keys
+    :keymaps 'rustic-mode-map
     "z" 'Competitive-coding-output-input-toggle
     "r" 'rust-reset
     "i" 'code-input-refresh
-    "c" 'copy-current-file)
+    "f" 'copy-current-file
+    "c" 'smart-compile)
+
+(general-define-key
+    :states '(normal emacs visual)
+    "z" '(:ignore t :which-key "fold")
+    "z c" 'vimish-fold-toggle
+    "z a" 'vimish-fold-avy
+    "z f" 'vimish-fold-refold-all
+    "z u" 'vimish-fold-unfold-all)

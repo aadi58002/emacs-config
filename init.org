@@ -11,8 +11,8 @@
   - [[#keybindings][Keybindings]]
   - [[#generally-helpful-package][Generally helpful Package]]
   - [[#ui][UI]]
-  - [[#completion][Completion]]
   - [[#coding][Coding]]
+  - [[#completion][Completion]]
   - [[#org][Org]]
 - [[#keybindings-1][Keybindings]]
   - [[#custom-function-map][Custom Function Map]]
@@ -25,6 +25,7 @@
   - [[#file-map][File Map]]
   - [[#org-map][Org Map]]
   - [[#lsp-map][Lsp Map]]
+  - [[#fold][Fold]]
 
 * Customized Default
 #+begin_src emacs-lisp
@@ -118,7 +119,6 @@
       (find-file (expand-file-name "outputf.in" default-directory))
       (other-window 1)
       (enlarge-window-horizontally 40))
-
 #+end_src
 *** Rust reset
 #+begin_src emacs-lisp
@@ -127,7 +127,6 @@
     (widen)
     (erase-buffer)
     (insert "<cp")
-    (yas-expand)
     (narrow-to-defun))
 #+end_src
 *** Rust paste input
@@ -175,9 +174,9 @@
 ** Keybindings
 *** Evil
 #+begin_src emacs-lisp
-    (eval-when-compile (setq evil-want-keybinding nil))
+(eval-when-compile (setq evil-want-keybinding nil))
 
-    (use-package evil
+(use-package evil
       :init
         (setq evil-want-integration t) ;; This is optional since it's already set to t by default.
         (setq evil-want-keybinding nil)
@@ -206,6 +205,57 @@
     (evil-collection-init))
 #+end_src
 ** Generally helpful Package
+*** Docker
+#+begin_src emacs-lisp
+(use-package docker
+   :config
+   (setq tramp-docker-program "podman"
+         docker-command "podman"
+         docker-composee-command "podman-compose"
+         tramp-docker-method "podman"))
+#+end_src
+*** Ace window
+#+begin_src emacs-lisp
+(use-package ace-window
+    :config
+    (setq aw-keys '(?a ?s ?d ?f ?g ?h ?j ?k ?l)))
+#+end_src
+*** Pulsar
+#+begin_src emacs-lisp
+(use-package pulsar
+   :config
+   (setq pulsar-pulse t)
+   (setq pulsar-delay 0.055)
+   (setq pulsar-iterations 10)
+   (setq pulsar-face 'pulsar-magenta)
+   (setq pulsar-highlight-face 'pulsar-yellow)
+   (add-hook 'next-error-hook #'pulsar-pulse-line)
+   (add-hook 'consult-after-jump-hook #'pulsar-recenter-top)
+   (add-hook 'consult-after-jump-hook #'pulsar-reveal-entry)
+   (pulsar-global-mode 1))
+#+end_src
+*** Vimish fold
+#+begin_src emacs-lisp
+(use-package vimish-fold)
+#+end_src
+*** Ligatures
+#+begin_src emacs-lisp
+(use-package ligature
+  :config
+  (ligature-set-ligatures 'prog-mode '("-|" "-~" "---" "-<<" "-<" "--" "->" "->>" "-->" "///" "/=" "/=="
+                                      "/>" "//" "/*" "*>" "***" "*/" "<-" "<<-" "<=>" "<=" "<|" "<||"
+                                      "<|||" "<|>" "<:" "<>" "<-<" "<<<" "<==" "<<=" "<=<" "<==>" "<-|"
+                                      "<<" "<~>" "<=|" "<~~" "<~" "<$>" "<$" "<+>" "<+" "</>" "</" "<*"
+                                      "<*>" "<->" "<!--" ":>" ":<" ":::" "::" ":?" ":?>" ":=" "::=" "=>>"
+                                      "==>" "=/=" "=!=" "=>" "===" "=:=" "==" "!==" "!!" "!=" ">]" ">:"
+                                      ">>-" ">>=" ">=>" ">>>" ">-" ">=" "&&&" "&&" "|||>" "||>" "|>" "|]"
+                                      "|}" "|=>" "|->" "|=" "||-" "|-" "||=" "||" ".." ".?" ".=" ".-" "..<"
+                                      "..." "+++" "+>" "++" "[||]" "[<" "[|" "{|" "??" "?." "?=" "?:" "##"
+                                      "###" "####" "#[" "#{" "#=" "#!" "#:" "#_(" "#_" "#?" "#(" ";;" "_|_"
+                                      "__" "~~" "~~>" "~>" "~-" "~@" "$>" "^=" "]#"))
+  (global-prettify-symbols-mode)
+  (global-ligature-mode t))
+#+end_src
 *** Emms
 #+begin_src emacs-lisp
 (use-package emms
@@ -213,14 +263,14 @@
     (require 'emms-setup)
     (emms-all)
     (setq emms-source-file-default-directory "~/Music/"
-	  emms-info-functions '(emms-info-native)
-	  emms-player-list '(emms-player-vlc)
-	  emms-repeat-track t
-	  emms-mode-line-mode t
-	  emms-playlist-buffer-name "*Music*"
-	  emms-playing-time-mode t
-	  emms-info-asynchronously t
-	  emms-source-file-directory-tree-function 'emms-source-file-directory-tree-find)
+          emms-info-functions '(emms-info-native)
+          emms-player-list '(emms-player-mpv)
+          emms-repeat-track t
+          emms-mode-line-mode t
+          emms-playlist-buffer-name "*Music*"
+          emms-playing-time-mode t
+          emms-info-asynchronously t
+          emms-source-file-directory-tree-function 'emms-source-file-directory-tree-find)
     (emms-add-directory-tree "~/Music/")
     (emms-add-directory-tree "~/Videos/Test Video"))
 #+end_src
@@ -238,16 +288,17 @@
 #+begin_src emacs-lisp
 (use-package avy
      :config
+     (setq avy-background t)
      (avy-setup-default))
 #+end_src
 *** Undo fu
 #+begin_src emacs-lisp
 (use-package undo-fu)
 #+end_src
-*** Undohist
+*** Undo hist
 #+begin_src emacs-lisp
 (use-package undohist
-  :config
+    :config
     (undohist-initialize))
 #+end_src
 *** Savehist
@@ -259,23 +310,23 @@
 ** UI
 *** Dashboard
 #+begin_src emacs-lisp
-  (setq banner-icons-list (file-expand-wildcards (concat user-emacs-directory "icons/*")))
-  (use-package dashboard
-          :after all-the-icons
-          :config
-          (setq dashboard-items '((recents  . 5)
-                                  (agenda . 5)
-                                  (projects . 5)))
-          (setq dashboard-set-heading-icons t)
-          (setq dashboard-startup-banner (random-element-of-list banner-icons-list))
-          (setq dashboard-banner-logo-title "")
-          (setq dashboard-image-banner-max-height 500)
-          (setq dashboard-set-footer nil)
-          (setq dashboard-set-file-icons t)
-          (setq dashboard-set-init-info t)
-          (setq initial-buffer-choice (lambda () (get-buffer-create "*dashboard*")))
-          (dashboard-setup-startup-hook))
-  (add-hook 'server-after-make-frame-hook 'dashboard-refresh-buffer)
+(setq banner-icons-list (file-expand-wildcards (concat user-emacs-directory "icons/*")))
+(use-package dashboard
+        :after all-the-icons
+        :config
+        (setq dashboard-items '((recents  . 5)
+                                (agenda . 5)
+                                (projects . 5)))
+        (setq dashboard-set-heading-icons t)
+        (setq dashboard-startup-banner (random-element-of-list banner-icons-list))
+        (setq dashboard-banner-logo-title "")
+        (setq dashboard-image-banner-max-height 500)
+        (setq dashboard-set-footer nil)
+        (setq dashboard-set-file-icons t)
+        (setq dashboard-set-init-info t)
+        (setq initial-buffer-choice (lambda () (get-buffer-create "*dashboard*")))
+        (dashboard-setup-startup-hook))
+(add-hook 'server-after-make-frame-hook 'dashboard-refresh-buffer)
 #+end_src
 *** Which Key
 #+begin_src emacs-lisp
@@ -283,7 +334,7 @@
   :init
   (which-key-mode))
 #+end_src
-*** Doom theme
+*** Theme
 #+begin_src emacs-lisp
 (use-package doom-themes
     :config
@@ -310,16 +361,15 @@
 #+end_src
 *** Doom modeline
 #+begin_src emacs-lisp
-  (use-package doom-modeline
-      :init (doom-modeline-mode 1)
-      :config
-       (display-battery-mode 1)
-       (setq doom-modeline-project-detection 'truncate-upto-project)
-       (setq doom-modeline-enable-word-count t)
-       (setq doom-modeline-buffer-encoding nil)
-       (setq doom-modeline-env-version t)
-       (setq doom-modeline-hud t)
-  )
+(use-package doom-modeline
+    :init (doom-modeline-mode 1)
+    :config
+     (display-battery-mode 1)
+     (setq doom-modeline-project-detection 'truncate-upto-project)
+     (setq doom-modeline-enable-word-count t)
+     (setq doom-modeline-buffer-encoding nil)
+     (setq doom-modeline-env-version t)
+     (setq doom-modeline-hud t))
 #+end_src
 *** All Icons Mode Line
 #+begin_src emacs-lisp
@@ -331,6 +381,15 @@
       :config
       (all-the-icons-completion-mode)
       (add-hook 'marginalia-mode-hook #'all-the-icons-completion-marginalia-setup))
+#+end_src
+*** Corfu Icons
+#+begin_src emacs-lisp
+(use-package kind-icon
+  :after corfu
+  :custom
+  (kind-icon-default-face 'corfu-default) ; to compute blended backgrounds correctly
+  :config
+  (add-to-list 'corfu-margin-formatters #'kind-icon-margin-formatter))
 #+end_src
 *** Dired Icons
 #+begin_src emacs-lisp
@@ -346,6 +405,186 @@
 #+begin_src emacs-lisp
 (use-package emojify)
 #+end_src
+** Coding
+*** Evil Nerd Commentor
+#+begin_src emacs-lisp
+(use-package evil-nerd-commenter)
+#+end_src
+*** Lsp Mode
+#+begin_src emacs-lisp
+(use-package lsp-mode
+  :custom
+  (lsp-completion-provider :none)
+  :init
+  (setq lsp-log-io nil)
+  (defun my/lsp-mode-setup-completion ()
+    (setf (alist-get 'styles (alist-get 'lsp-capf completion-category-defaults))
+          '(flex))) ;; Configure flex
+  :hook
+  (lsp-completion-mode . my/lsp-mode-setup-completion)
+  (prog-mode . lsp-mode)
+  (web-mode . lsp-mode))
+#+end_src
+*** Rust
+**** Rustic
+#+begin_src emacs-lisp
+  (use-package rustic
+    :config
+      (setq 
+          lsp-rust-analyzer-display-chaining-hints t
+          lsp-rust-analyzer-expand-macro t
+          lsp-rust-analyzer-display-parameter-hints t
+          lsp-rust-analyzer-server-display-inlay-hints t))
+#+end_src
+*** Typescript
+**** Typescript Mode
+#+begin_src emacs-lisp
+(use-package typescript-mode)
+#+end_src
+**** Web mode
+#+begin_src emacs-lisp
+(setq web-mode-markup-indent-offset 2)
+(setq web-mode-code-indent-offset 2)
+(setq web-mode-css-indent-offset 2)
+(use-package web-mode
+    :commands web-mode)
+#+end_src
+**** Svelte Mode
+#+begin_src emacs-lisp
+(add-to-list 'auto-mode-alist '("\\.svelte\\'" . web-mode))
+(setq web-mode-engines-alist
+    '(("svelte" . "\\.svelte\\'")))
+#+end_src
+*** C/C++
+#+begin_src emacs-lisp
+(use-package ccls)
+#+end_src
+*** Solidity
+#+begin_src emacs-lisp
+(use-package solidity-mode)
+#+end_src
+*** Python
+#+begin_src emacs-lisp
+(use-package lsp-pyright
+  :hook (python-mode . (lambda ()
+                          (require 'lsp-pyright)
+                          (lsp))))
+#+end_src
+*** Flycheck
+#+begin_src emacs-lisp
+(use-package flycheck
+  :init (global-flycheck-mode))
+#+end_src
+*** Format all
+#+begin_src emacs-lisp
+(use-package format-all
+   :config
+   (add-hook 'prog-mode-hook 'format-all-mode)
+   (add-hook 'format-all-mode-hook 'format-all-ensure-formatter))
+#+end_src
+*** Lsp ui
+#+begin_src emacs-lisp
+  (use-package lsp-ui
+    :hook (lsp-mode . lsp-ui-mode)
+    :config
+    (setq lsp-ui-peek-enable t
+          lsp-ui-doc-position 'bottom
+          lsp-ui-peek-always-show t
+          lsp-signature-auto-activate t
+          lsp-ui-doc-delay 0.0
+          lsp-ui-sideline-show-diagnostics t 
+          lsp-enable-symbol-highlighting t 
+          lsp-ui-doc-enable t 
+          lsp-ui-doc-show-with-cursor t 
+          lsp-ui-doc-show-with-mouse t 
+          lsp-lens-enable t 
+          lsp-headerline-breadcrumb-enable t 
+          lsp-ui-sideline-show-diagnostics t 
+          lsp-modeline-code-actions-enable t 
+          lsp-eldoc-enable-hover t 
+          lsp-completion-show-detail t 
+          lsp-completion-show-kind t 
+          lsp-ui-sideline-actions-icon lsp-ui-sideline-actions-icon-default))
+#+end_src
+*** Tree sitter
+#+begin_src emacs-lisp
+  (use-package tree-sitter-langs
+        :after tree-sitter
+        :config
+        (tree-sitter-require 'tsx)
+        (tree-sitter-require 'typescript)
+        (tree-sitter-require 'rust)
+        (tree-sitter-require 'javascript)
+        (tree-sitter-require 'python)
+        (tree-sitter-require 'html)
+        (tree-sitter-require 'cpp)
+        (tree-sitter-require 'css)
+        (add-to-list 'tree-sitter-major-mode-language-alist '(typescript-ts-mode . tsx)))
+  (global-tree-sitter-mode)
+  (add-hook 'tree-sitter-after-on-hook #'tree-sitter-hl-mode)
+#+end_src
+*** Yasnippet
+#+begin_src emacs-lisp
+(use-package yasnippet
+  :config
+  (setq yas-snippet-dirs
+      '("~/.config/emacs/snippets"))
+(yas-global-mode 1))
+#+end_src
+*** Doom snippets
+#+begin_src emacs-lisp
+(use-package doom-snippets
+  :after yasnippet
+  :straight (doom-snippets :type git :host github :repo "hlissner/doom-snippets" :files ("*.el" "*")))
+#+end_src
+*** Magit
+#+begin_src emacs-lisp
+(use-package magit
+  :config
+    (setq magit-display-buffer-function #'magit-display-buffer-fullframe-status-v1))
+#+end_src
+*** Git gutter
+#+begin_src emacs-lisp
+(use-package git-gutter-fringe
+    :config
+    (global-git-gutter-mode +1)
+    (setq-default fringes-outside-margins t)
+        ;; thin fringe bitmaps
+        (define-fringe-bitmap 'git-gutter-fr:added [224]
+        nil nil '(center repeated))
+        (define-fringe-bitmap 'git-gutter-fr:modified [224]
+        nil nil '(center repeated))
+        (define-fringe-bitmap 'git-gutter-fr:deleted [128 192 224 240]
+        nil nil 'bottom))
+#+end_src
+*** Smart compile
+#+begin_src emacs-lisp
+(use-package smart-compile
+  :config
+  (setq smart-compile-check-build-system 'nil)
+  (add-to-list 'smart-compile-alist '("\\.[Cc]+[Pp]*\\'" . "make %n && touch inputf.in && timeout 4s ./%n < inputf.in &> outputf.in "))
+  (add-to-list 'smart-compile-alist  '("\\.rs$" . "touch inputf.in && cargo run -q < inputf.in &> outputf.in ")))
+#+end_src
+*** Evil Multi Edit
+#+begin_src emacs-lisp
+(use-package evil-multiedit
+    :config
+    (evil-multiedit-default-keybinds))
+#+end_src
+*** Projectile
+#+begin_src emacs-lisp
+(use-package projectile
+  :init
+  (projectile-mode +1)
+  :bind (:map projectile-mode-map
+              ("s-p" . projectile-command-map)
+              ("C-c p" . projectile-command-map)))
+#+end_src
+*** Rainbow Delimiter
+#+begin_src emacs-lisp
+(use-package rainbow-delimiters
+  :hook (prog-mode . rainbow-delimiters-mode))
+#+end_src
 ** Completion
 *** Company
 #+begin_src emacs-lisp
@@ -355,15 +594,13 @@
 #+begin_src emacs-lisp
 (use-package corfu
   :init
-  (global-corfu-mode)
   ;; Setup corfu for popup like completion
   (setq corfu-cycle t  ; Allows cycling through candidates
         corfu-auto t   ; Enable auto completion
-        corfu-auto-prefix 0  ; Complete with less prefix keys
+        corfu-auto-prefix 1  ; Complete with less prefix keys
         corfu-auto-delay 0.0  ; No delay for completion
-        corfu-echo-documentation 0.25  ; Echo docs for current completion option
-        corfu-quit-at-boundary 'insert
-        )
+        corfu-echo-documentation 0.0  ; Echo docs for current completion option
+        corfu-quit-at-boundary 'insert)
   (global-corfu-mode 1)
   (advice-add #'lsp-completion-at-point :around #'cape-wrap-noninterruptible))
 #+end_src
@@ -392,9 +629,7 @@
 (use-package cape
     :init
     (add-to-list 'completion-at-point-functions #'cape-file)
-    (add-to-list 'completion-at-point-functions #'cape-dabbrev)
-    (add-to-list 'completion-at-point-functions (cape-company-to-capf #'company-yasnippet)))
-  
+    (add-to-list 'completion-at-point-functions #'cape-dabbrev))
 #+end_src
 *** Vertico
 #+begin_src emacs-lisp
@@ -565,189 +800,11 @@
    :preview-key '(:debounce 0.4 any))
   (setq consult-narrow-key "<")) ;; (kbd "C-+")
 #+end_src
-
-#+RESULTS:
-: consult-history
-
 *** Embark Consult
 #+begin_src emacs-lisp
 (use-package embark-consult
   :hook
   (embark-collect-mode . consult-preview-at-point-mode))
-#+end_src
-** Coding
-*** Evil Nerd Commentor
-#+begin_src emacs-lisp
-(use-package evil-nerd-commenter)
-#+end_src
-*** Lsp Mode
-#+begin_src emacs-lisp
-        (use-package lsp-mode
-          :custom
-          (lsp-completion-provider :none)
-          :init
-          (setq lsp-log-io nil)
-          (defun my/lsp-mode-setup-completion ()
-            (setf (alist-get 'styles (alist-get 'lsp-capf completion-category-defaults))
-                  '(flex))) ;; Configure flex
-          :hook
-          (lsp-completion-mode . my/lsp-mode-setup-completion)
-          (prog-mode . lsp-mode)
-          (web-mode . lsp-mode))
-#+end_src
-*** Rust
-**** Rustic
-#+begin_src emacs-lisp
-  (use-package rustic
-    :config
-      (setq 
-          lsp-rust-analyzer-display-chaining-hints t
-          lsp-rust-analyzer-expand-macro t
-          lsp-rust-analyzer-display-parameter-hints t
-          lsp-rust-analyzer-server-display-inlay-hints t))
-#+end_src
-*** Typescript
-**** Typescript Mode
-#+begin_src emacs-lisp
-(use-package typescript-mode)
-#+end_src
-**** Web mode
-#+begin_src emacs-lisp
-(setq web-mode-markup-indent-offset 2)
-(setq web-mode-code-indent-offset 2)
-(setq web-mode-css-indent-offset 2)
-(use-package web-mode
-    :commands web-mode)
-#+end_src
-**** Svelte Mode
-#+begin_src emacs-lisp
-(add-to-list 'auto-mode-alist '("\\.svelte\\'" . web-mode))
-(setq web-mode-engines-alist
-    '(("svelte" . "\\.svelte\\'")))
-#+end_src
-*** C/C++
-#+begin_src emacs-lisp
-(use-package ccls)
-#+end_src
-*** Solidity
-#+begin_src emacs-lisp
-(use-package solidity-mode)
-#+end_src
-*** Python
-#+begin_src emacs-lisp
-(use-package lsp-pyright
-  :hook (python-mode . (lambda ()
-                          (require 'lsp-pyright)
-                          (lsp))))
-#+end_src
-*** Flycheck
-#+begin_src emacs-lisp
-(use-package flycheck
-  :init (global-flycheck-mode))
-#+end_src
-*** Lsp ui
-#+begin_src emacs-lisp
-  (use-package lsp-ui
-    :hook (lsp-mode . lsp-ui-mode)
-    :config
-    (setq lsp-ui-peek-enable t
-          lsp-ui-doc-position 'bottom
-          lsp-ui-peek-always-show t
-          lsp-signature-auto-activate t
-          lsp-ui-doc-delay 0.0
-          lsp-ui-sideline-show-diagnostics t 
-          lsp-enable-symbol-highlighting t 
-          lsp-ui-doc-enable t 
-          lsp-ui-doc-show-with-cursor t 
-          lsp-ui-doc-show-with-mouse t 
-          lsp-lens-enable t 
-          lsp-headerline-breadcrumb-enable t 
-          lsp-ui-sideline-show-diagnostics t 
-          lsp-modeline-code-actions-enable t 
-          lsp-eldoc-enable-hover t 
-          lsp-completion-show-detail t 
-          lsp-completion-show-kind t 
-          lsp-ui-sideline-actions-icon lsp-ui-sideline-actions-icon-default))
-#+end_src
-*** Tree sitter
-#+begin_src emacs-lisp
-  (use-package tree-sitter-langs
-        :after tree-sitter
-        :config
-        (tree-sitter-require 'tsx)
-        (tree-sitter-require 'typescript)
-        (tree-sitter-require 'rust)
-        (tree-sitter-require 'javascript)
-        (tree-sitter-require 'python)
-        (tree-sitter-require 'html)
-        (tree-sitter-require 'cpp)
-        (tree-sitter-require 'css)
-        (add-to-list 'tree-sitter-major-mode-language-alist '(typescript-ts-mode . tsx)))
-  (global-tree-sitter-mode)
-  (add-hook 'tree-sitter-after-on-hook #'tree-sitter-hl-mode)
-#+end_src
-*** Yasnippet
-#+begin_src emacs-lisp
-(use-package yasnippet
-  :config
-  (setq yas-snippet-dirs
-      '("~/.config/emacs/snippets"))
-
-(yas-global-mode 1) ;; or M-x yas-reload-all if you've started YASnippet already.
-#+end_src
-*** Doom snippets
-#+begin_src emacs-lisp
-(use-package doom-snippets
-  :after yasnippet
-  :straight (doom-snippets :type git :host github :repo "hlissner/doom-snippets" :files ("*.el" "*")))
-#+end_src
-*** Magit
-#+begin_src emacs-lisp
-(use-package magit
-  :config
-    (setq magit-display-buffer-function #'magit-display-buffer-fullframe-status-v1))
-#+end_src
-*** Git gutter
-#+begin_src emacs-lisp
-(use-package git-gutter-fringe
-    :config
-    (global-git-gutter-mode +1)
-    (setq-default fringes-outside-margins t)
-        ;; thin fringe bitmaps
-        (define-fringe-bitmap 'git-gutter-fr:added [224]
-        nil nil '(center repeated))
-        (define-fringe-bitmap 'git-gutter-fr:modified [224]
-        nil nil '(center repeated))
-        (define-fringe-bitmap 'git-gutter-fr:deleted [128 192 224 240]
-        nil nil 'bottom))
-#+end_src
-*** Smart compile
-#+begin_src emacs-lisp
-(use-package smart-compile
-  :config
-  (setq smart-compile-check-build-system 'nil)
-  (add-to-list 'smart-compile-alist '("\\.[Cc]+[Pp]*\\'" . "make %n && touch inputf.in && timeout 4s ./%n < inputf.in &> outputf.in "))
-  (add-to-list 'smart-compile-alist  '("\\.rs$" . "touch inputf.in && cargo run -q < inputf.in &> outputf.in "))))
-#+end_src
-*** Evil Multi Edit
-#+begin_src emacs-lisp
-(use-package evil-multiedit
-    :config
-    (evil-multiedit-default-keybinds))
-#+end_src
-*** Projectile
-#+begin_src emacs-lisp
-(use-package projectile
-  :init
-  (projectile-mode +1)
-  :bind (:map projectile-mode-map
-              ("s-p" . projectile-command-map)
-              ("C-c p" . projectile-command-map)))
-#+end_src
-*** Rainbow Delimiter
-#+begin_src emacs-lisp
-(use-package rainbow-delimiters
-  :hook (prog-mode . rainbow-delimiters-mode))
 #+end_src
 ** Org
 *** Defaults
@@ -783,15 +840,28 @@
 (use-package toc-org)  
 (add-hook 'org-mode-hook (lambda () (toc-org-mode 1)))
 #+end_src
-*** Org Superstar
+*** Org Modern
 #+begin_src emacs-lisp
-(use-package org-superstar)
-(add-hook 'org-mode-hook (lambda () (org-superstar-mode 1)))
-#+end_src
-*** Org appear
-#+begin_src emacs-lisp
-(use-package org-appear)
-(add-hook 'org-mode-hook 'org-appear-mode)
+(use-package org-modern
+   :config
+    (setq
+        org-auto-align-tags nil
+        org-tags-column 0
+        org-catch-invisible-edits 'show-and-error
+        org-special-ctrl-a/e t
+        org-insert-heading-respect-content t
+        org-hide-emphasis-markers t
+        org-pretty-entities t
+        org-ellipsis "…"
+        org-agenda-tags-column 0
+        org-agenda-block-separator ?─
+        org-agenda-time-grid
+        '((daily today require-timed)
+            (800 1000 1200 1400 1600 1800 2000)
+            " ┄┄┄┄┄ " "┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄")
+            org-agenda-current-time-string
+            "⭠ now ─────────────────────────────────────────────────")
+        (global-org-modern-mode))
 #+end_src
 *** Org tempo
 #+begin_src emacs-lisp
@@ -861,24 +931,27 @@
 #+end_src
 * Keybindings
 #+begin_src emacs-lisp
-  (global-set-key (kbd "<escape>") 'keyboard-escape-quit)
-  (global-set-key (kbd "C-;") 'embark-act)
-  (define-key minibuffer-mode-map (kbd "C-S-v") 'evil-paste-after)
-  (general-create-definer adi/leader-keys
-   :states '(normal visual emacs)
-   :keymaps 'override
-   :prefix "SPC")
-  (general-create-definer adi/leader-local-keys
-   :states '(normal visual emacs)
-   :keymaps 'override
-   :prefix "SPC m")
-  (adi/leader-keys
-      "SPC" 'find-file
-      "RET" 'denote-open-or-create)
-  (general-define-key
-      :states 'motion
-      "K" 'helpful-at-point
-      "M-/" 'evilnc-comment-or-uncomment-lines)
+(global-set-key (kbd "<escape>") 'keyboard-escape-quit)
+(global-set-key (kbd "C-;") 'embark-act)
+(general-define-key
+    :keymaps 'evil-window-map
+    "C-w" 'ace-window)
+(define-key minibuffer-mode-map (kbd "C-S-v") 'evil-paste-after)
+(general-create-definer aadi/leader-keys
+    :states '(normal visual emacs)
+    :keymaps 'override
+    :prefix "SPC")
+(general-create-definer aadi/leader-local-keys
+    :states '(normal visual emacs)
+    :keymaps 'override
+    :prefix "SPC m")
+(aadi/leader-keys
+    "SPC" 'find-file
+    "RET" 'denote-open-or-create)
+(general-define-key
+    :states 'motion
+    "K" 'helpful-at-point
+    "M-/" 'evilnc-comment-or-uncomment-lines)
 #+end_src
 ** Custom Function Map
 #+begin_src emacs-lisp
@@ -888,24 +961,26 @@
 #+end_src
 ** Org agenda
 #+begin_src emacs-lisp
-(adi/leader-keys
+(aadi/leader-keys
      "z" 'org-agenda)
 #+end_src
 ** Dashboard Map
 #+begin_src emacs-lisp
-  (general-define-key
-      :keymaps 'dashboard-mode-map
-      :states '(normal visual emacs)
-      "RET" 'dashboard-return)
+(general-define-key
+    :keymaps 'dashboard-mode-map
+    :states '(normal visual emacs)
+    "RET" 'dashboard-return)
 #+end_src
 ** Magit Map
 #+begin_src emacs-lisp
-(adi/leader-keys
+(aadi/leader-keys
+    "g" '(:ignore t :which-key "magit")
     "g g" 'magit) 
 #+end_src
 ** Denote Map
 #+begin_src emacs-lisp
-(adi/leader-keys
+(aadi/leader-keys
+   "n" '(:ignore t :which-key "denote")
    "n c" 'denote-create-note-in-subdirectory
    "n j" 'my-denote-journal
    "n n" 'denote
@@ -925,45 +1000,64 @@
 #+begin_src emacs-lisp
 (general-define-key
     :states 'normal
-    "m" 'avy-goto-char)
+    "m" '(avy-goto-char :which-key "avy goto char"))
 #+end_src
 ** Buffer Map
 #+begin_src emacs-lisp
-(adi/leader-keys
+(aadi/leader-keys
+    "b" '(:ignore t :which-key "buffer")
     "b b" 'consult-buffer
     "b k" 'kill-this-buffer)
 #+end_src
 ** File Map
 #+begin_src emacs-lisp
-(adi/leader-keys
+(aadi/leader-keys
+    "f" '(:ignore t :which-key "files")
     "f r" 'consult-recent-file)
 #+end_src
 ** Org Map
 #+begin_src emacs-lisp
-  (general-define-key
-      :keymap 'org-mode-map
-      :states 'normal
-        "?\t" 'org-cycle
-        "<RET>" 'org-open-at-point
-        "z i" '(org-toggle-inline-images :whick-key "inline images")
-        "C-c a" 'link-hint-copy-link-at-point)
-  (adi/leader-local-keys org-mode-map
-      "lc" 'org-cliplink)
+(general-define-key
+    :keymaps 'org-mode-map
+    :states 'normal
+    "?\t" 'org-cycle
+    "<RET>" 'org-open-at-point
+    "C-c a" 'link-hint-copy-link-at-point
+    "z i" '(org-toggle-inline-images :whick-key "inline images"))
+
+(aadi/leader-keys org-mode-map
+    "m" '(:ignore t :which-key "localleader"))
+(aadi/leader-local-keys org-mode-map
+    "l" '(:ignore t :which-key "link")
+    "l c" 'org-cliplink)
 #+end_src
 ** Lsp Map
 #+begin_src emacs-lisp
-  (general-define-key
-      :keymap 'lsp-mode-map
-      :states 'normal
-        "K" 'lsp-describe-thing-at-point
-        "C-c a" 'lsp-format-buffer)
+(aadi/leader-keys lsp-mode-map
+    "m" '(:ignore t :which-key "localleader"))
+(general-define-key
+    :keymaps 'lsp-mode-map
+    :states 'normal
+    "K" 'lsp-describe-thing-at-point
+    "C-c a" 'format-all-buffer)
 #+end_src
 *** Rustic Mode
 #+begin_src emacs-lisp
-  (adi/leader-local-keys
-      :keymap 'rustic-mode-map
-      "z" 'Competitive-coding-output-input-toggle
-      "r" 'rust-reset
-      "i" 'code-input-refresh
-      "c" 'copy-current-file)
+(aadi/leader-local-keys
+    :keymaps 'rustic-mode-map
+    "z" 'Competitive-coding-output-input-toggle
+    "r" 'rust-reset
+    "i" 'code-input-refresh
+    "f" 'copy-current-file
+    "c" 'smart-compile)
+#+end_src
+** Fold
+#+begin_src emacs-lisp
+(general-define-key
+    :states '(normal emacs visual)
+    "z" '(:ignore t :which-key "fold")
+    "z c" 'vimish-fold-toggle
+    "z a" 'vimish-fold-avy
+    "z f" 'vimish-fold-refold-all
+    "z u" 'vimish-fold-unfold-all)
 #+end_src
