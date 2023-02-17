@@ -85,7 +85,6 @@
   (widen)
   (erase-buffer)
   (insert "<cp")
-  (yas-expand)
   (narrow-to-defun))
 
 (defun code-input-refresh()
@@ -148,14 +147,37 @@
     :config
     (evil-collection-init))
 
-(use-package notmuch)
-
 (use-package docker
    :config
    (setq tramp-docker-program "podman"
          docker-command "podman"
          docker-composee-command "podman-compose"
          tramp-docker-method "podman"))
+
+(use-package tempel
+  :custom
+  (tempel-trigger-prefix "<")
+  :bind (("M-+" . tempel-complete) ;; Alternative tempel-expand
+         ("M-*" . tempel-insert))
+  :init
+  (defun tempel-setup-capf ()
+    ;; Add the Tempel Capf to `completion-at-point-functions'.
+    ;; `tempel-expand' only triggers on exact matches. Alternatively use
+    ;; `tempel-complete' if you want to see all matches, but then you
+    ;; should also configure `tempel-trigger-prefix', such that Tempel
+    ;; does not trigger too often when you don't expect it. NOTE: We add
+    ;; `tempel-expand' *before* the main programming mode Capf, such
+    ;; that it will be tried first.
+    (setq-local completion-at-point-functions
+                (cons #'tempel-expand
+                      completion-at-point-functions)))
+
+  (add-hook 'prog-mode-hook 'tempel-setup-capf)
+  (add-hook 'text-mode-hook 'tempel-setup-capf)
+  (global-tempel-abbrev-mode)
+)
+
+(use-package tempel-collection)
 
 (use-package ace-window
     :config
@@ -207,13 +229,7 @@
     (emms-add-directory-tree "~/Music/")
     (emms-add-directory-tree "~/Videos/Test Video"))
 
-(use-package helpful
-    :config
-        (global-set-key (kbd "C-h f") #'helpful-callable)
-        (global-set-key (kbd "C-h v") #'helpful-variable)
-        (global-set-key (kbd "C-h k") #'helpful-key)
-        (global-set-key (kbd "C-h F") #'helpful-function)
-        (global-set-key (kbd "C-h C") #'helpful-command))
+(use-package helpful)
 
 (use-package avy
      :config
@@ -221,10 +237,6 @@
      (avy-setup-default))
 
 (use-package undo-fu)
-
-(use-package undohist
-    :config
-    (undohist-initialize))
 
 (use-package savehist
   :init
@@ -255,10 +267,8 @@
 (use-package doom-themes
     :config
     (setq doom-themes-enable-bold t
-            doom-themes-enable-italic t)
+          doom-themes-enable-italic t)
     (load-theme 'doom-dracula t)
-    (doom-themes-visual-bell-config)
-    (doom-themes-org-config)
     (custom-set-faces
         '(doom-themes-visual-bell (( t(:background "#00FFFF"))))
         '(emms-playlist-selected-face (( t(:foreground "royal blue"))))
@@ -270,7 +280,7 @@
 ;; (use-package modus-themes
 ;;    :config
 ;;    (setq modus-themes-italic-constructs t
-;;          modus-themes-bold-constructs nil)
+;;          modus-themes-bold-constructs t)
 ;;    (load-theme 'modus-vivendi t))
 
 (use-package doom-modeline
@@ -394,16 +404,6 @@
 (global-tree-sitter-mode)
 (add-hook 'tree-sitter-after-on-hook #'tree-sitter-hl-mode)
 
-(use-package yasnippet
-  :config
-  (setq yas-snippet-dirs
-      '("~/.config/emacs/snippets"))
-(yas-global-mode 1))
-
-(use-package doom-snippets
-  :after yasnippet
-  :straight (doom-snippets :type git :host github :repo "hlissner/doom-snippets" :files ("*.el" "*")))
-
 (use-package magit
   :config
     (setq magit-display-buffer-function #'magit-display-buffer-fullframe-status-v1))
@@ -440,9 +440,8 @@
 (use-package rainbow-delimiters
   :hook (prog-mode . rainbow-delimiters-mode))
 
-(use-package company)
-
 (use-package corfu
+  :straight (:files (:defaults "extensions/*"))
   :init
   ;; Setup corfu for popup like completion
   (setq corfu-cycle t  ; Allows cycling through candidates
@@ -474,7 +473,6 @@
 
 (use-package cape
     :init
-    (add-to-list 'completion-at-point-functions (cape-company-to-capf #'company-yasnippet))
     (add-to-list 'completion-at-point-functions #'cape-file)
     (add-to-list 'completion-at-point-functions #'cape-dabbrev))
 
@@ -491,21 +489,23 @@
   (setq marginalia-align 'center
     marginalia-align-offset 20))
 
-(defun embark-act-noquit ()
-      "Run action but don't quit the minibuffer afterwards."
-      (interactive)
-      (let ((embark-quit-after-action nil))
-        (embark-act)))
-
 (use-package embark
         :bind
-        (("C-;" . embark-act-noquit)         ;; pick some comfortable binding
+        (("C-;" . embark-act)         ;; pick some comfortable binding
          ("M-." . embark-dwim)        ;; good alternative: M-.
          ("C-h B" . embark-bindings)) ;; alternative for `describe-bindings'
 
         :init
-        (setq prefix-help-command #'embark-prefix-help-command)
+
+        ;; Optionally replace the key help with a completing-read interface
+        (setq prefix-help-command #'embark-prefix-help-command
+              embark-quit-after-action nil)
+
         :config
+        ;; (define-key embark-symbol-map "D" #'devdocs-lookup)
+        ;; (define-key embark-function-map "D" #'devdocs-lookup)
+
+        ;; Hide the mode line of the Embark live/completions buffers
         (add-to-list 'display-buffer-alist
                      '("\\`\\*Embark Collect \\(Live\\|Completions\\)\\*"
                        nil
@@ -627,10 +627,6 @@
    ;; :preview-key (kbd "M-.")
    :preview-key '(:debounce 0.4 any))
   (setq consult-narrow-key "<")) ;; (kbd "C-+")
-
-(use-package embark-consult
-  :hook
-  (embark-collect-mode . consult-preview-at-point-mode))
 
 (defun adi/org-setup()
     (org-indent-mode 1)
@@ -841,3 +837,11 @@
     "z a" 'vimish-fold-avy
     "z f" 'vimish-fold-refold-all
     "z u" 'vimish-fold-unfold-all)
+
+(general-define-key
+   :prefix "C-h"
+   "f" #'helpful-callable
+   "v" #'helpful-variable
+   "k" #'helpful-key
+   "F" #'helpful-function
+   "C" #'helpful-command)

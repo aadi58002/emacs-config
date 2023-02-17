@@ -1,0 +1,23 @@
+# -*- mode: snippet -*-
+# name: Blog Setup Template
+# key: <blog
+# condition: t
+# --
+
+#+title: ${1:`
+(string-join
+ (mapcar #'capitalize
+         (split-string
+          (let (case-fold-search)
+            (replace-regexp-in-string
+             "\\([[:lower:]]\\)\\([[:upper:]]\\)" "\\1 \\2"
+             (replace-regexp-in-string "\\([[:upper:]]\\)\\([[:upper:]][0-9[:lower:]]\\)"
+                                       "\\1 \\2" (file-name-base(file-name-base buffer-file-name)))))
+          "[^[:word:]0-9]+"
+          )) " " )
+`}
+#+description: ${2:description}
+#+export_file_name: ~/Personal/Git-repos/Linux-Blog/${3:`(file-name-sans-extension (file-name-sans-extension (string-join (last (split-string buffer-file-name "/") 2) "/")))`}
+#+author: Aditya Yadav
+
+$0
