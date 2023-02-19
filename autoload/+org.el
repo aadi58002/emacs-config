@@ -1,4 +1,4 @@
-;;; Source https://github.com/doomemacs/doomemacs/blob/818efb263fdb5f564e9e37f79bce17d50b559888/modules/lang/org/autoload/org.el
+;;; Credits for code goes to https://github.com/doomemacs/doomemacs/blob/818efb263fdb5f564e9e37f79bce17d50b559888/modules/lang/org/autoload/org.el
 ;;; autoload/+org.el -*- lexical-binding: t; -*-
 
 ;;
@@ -37,9 +37,16 @@
              if (eq type 'sequence)
              if (member keyword keywords)
              return keywords)))
-
 ;;
 ;;; Commands
+
+;;;###autoload
+(defun +org/mark-org-checkbox-to-next-symbol ()
+  "Mark the org checkbox to the next symbol ir will make [ ] -> [-] -> [X] -> [ ]"
+  (interactive)
+  (let ((match (and (org-at-item-checkbox-p) (match-string 1))))
+    (org-toggle-checkbox (if (equal match "[ ]") '(16)))))
+
 
 ;;;###autoload
 (defun +org/dwim-at-point (&optional arg)
@@ -167,11 +174,11 @@ If on a:
              (org-open-at-point arg))))
 
         (`paragraph
-         (+org--toggle-inline-images-in-subtree))
+         (+org/mark-org-checkbox-to-next-symbol)
+         (+org--toggle-inline-iages-in-subtree))
 
         ((guard (org-element-property :checkbox (org-element-lineage context '(item) t)))
-         (let ((match (and (org-at-item-checkbox-p) (match-string 1))))
-           (org-toggle-checkbox (if (equal match "[ ]") '(16)))))
+         (+org/mark-org-checkbox-to-next-symbol))
 
         (_
          (if (or (org-in-regexp org-ts-regexp-both nil t)

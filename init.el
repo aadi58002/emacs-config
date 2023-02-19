@@ -56,6 +56,10 @@
             window-combination-resize t
             global-auto-revert-mode 1
             global-auto-revert-non-file-buffers t)
+(setq backup-directory-alist
+      `((".*" . ,temporary-file-directory)))
+(setq auto-save-file-name-transforms
+      `((".*" ,temporary-file-directory t)))
 
 (load (concat user-emacs-directory "autoload/+org"))
 
@@ -157,6 +161,12 @@
          docker-command "podman"
          docker-composee-command "podman-compose"
          tramp-docker-method "podman"))
+
+(use-package pdf-tools
+   :config
+   (add-to-list 'auto-mode-alist '("\\.pdf\\'" . pdf-view-mode)))
+(use-package org-pdfview
+   :after org)
 
 (use-package tempel
   :init
