@@ -1,4 +1,5 @@
 ;;; init.el -*- lexical-binding: t; -*-
+(defvar native-comp-deferred-compilation-deny-list nil)
 (setenv "LSP_USE_PLISTS" "1")
 (setq create-lockfiles nil)
 (setq recentf-max-menu-items 25)
@@ -35,7 +36,7 @@
 (setq dired-create-destination-dirs 'ask)
 (setq dired-vc-rename-file t)
 (setq dired-do-revert-buffer (lambda (dir) (not (file-remote-p dir))))
-
+(setq use-short-answers t)
 (setq dired-clean-up-buffers-too t)
 (setq dired-clean-confirm-killing-deleted-buffers t)
 (setq dired-x-hands-off-my-keys t)    ; easier to show the keys I use
@@ -56,6 +57,8 @@
             global-auto-revert-mode 1
             global-auto-revert-non-file-buffers t)
 
+(load (concat user-emacs-directory "autoload/+org"))
+
 (defun random-element-of-list (items)
   (let* ((size (length items))
          (index (random size)))
@@ -69,22 +72,23 @@
   (interactive)
   (start-process "brave" nil "setsid" "brave" "--incognito" "https://code.visualstudio.com/api/language-extensions/language-server-extension-guide"))
 
-(defun Competitive-coding-output-input-toggle ()
-  (interactive)
-  (delete-other-windows)
-  (kill-matching-buffers "*.in")
-  (evil-window-vsplit)
-  (find-file (expand-file-name "inputf.in" default-directory))
-  (evil-window-split)
-  (find-file (expand-file-name "outputf.in" default-directory))
-  (other-window 1)
-  (enlarge-window-horizontally 40))
+    (defun Competitive-coding-output-input-toggle ()
+      (interactive)
+      (delete-other-windows)
+      (kill-matching-buffers "*.in")
+      (evil-window-vsplit)
+      (find-file (expand-file-name "inputf.in" default-directory))
+      (evil-window-split)
+      (find-file (expand-file-name "outputf.in" default-directory))
+      (other-window 1)
+      (enlarge-window-horizontally 40))
 
 (defun rust-reset()
   (interactive)
   (widen)
   (erase-buffer)
-  (insert "<cp")
+  (insert "chef")
+  (tempel-expand)
   (narrow-to-defun))
 
 (defun code-input-refresh()
@@ -155,10 +159,6 @@
          tramp-docker-method "podman"))
 
 (use-package tempel
-  :custom
-  (tempel-trigger-prefix "<")
-  :bind (("M-+" . tempel-complete) ;; Alternative tempel-expand
-         ("M-*" . tempel-insert))
   :init
   (defun tempel-setup-capf ()
     ;; Add the Tempel Capf to `completion-at-point-functions'.
@@ -174,8 +174,7 @@
 
   (add-hook 'prog-mode-hook 'tempel-setup-capf)
   (add-hook 'text-mode-hook 'tempel-setup-capf)
-  (global-tempel-abbrev-mode)
-)
+  (global-tempel-abbrev-mode))
 
 (use-package tempel-collection)
 
@@ -238,6 +237,12 @@
 
 (use-package undo-fu)
 
+(use-package undohist
+  :init
+  (setq undo-tree-history-directory-alist '(((concat user-emacs-directory "/undohist"))))
+  :config
+  (undohist-initialize))
+
 (use-package savehist
   :init
   (savehist-mode))
@@ -268,6 +273,7 @@
     :config
     (setq doom-themes-enable-bold t
           doom-themes-enable-italic t)
+    (doom-themes-visual-bell-config)
     (load-theme 'doom-dracula t)
     (custom-set-faces
         '(doom-themes-visual-bell (( t(:background "#00FFFF"))))
@@ -277,11 +283,11 @@
         '(emms-playlist-track-face (( t(:foreground "#5da3e7"))))
         '(org-ellipsis (( t(:foreground "#C678DD"))))))
 
-;; (use-package modus-themes
-;;    :config
-;;    (setq modus-themes-italic-constructs t
-;;          modus-themes-bold-constructs t)
-;;    (load-theme 'modus-vivendi t))
+  ;; (use-package modus-themes
+  ;;    :config
+  ;;    (setq modus-themes-italic-constructs t
+  ;;          modus-themes-bold-constructs t)
+  ;;    (load-theme 'modus-vivendi t))
 
 (use-package doom-modeline
     :init (doom-modeline-mode 1)
@@ -330,13 +336,13 @@
   (prog-mode . lsp-mode)
   (web-mode . lsp-mode))
 
-(use-package rustic
-  :config
-    (setq 
-        lsp-rust-analyzer-display-chaining-hints t
-        lsp-rust-analyzer-expand-macro t
-        lsp-rust-analyzer-display-parameter-hints t
-        lsp-rust-analyzer-server-display-inlay-hints t))
+  (use-package rustic
+    :config
+      (setq 
+          lsp-rust-analyzer-display-chaining-hints t
+          lsp-rust-analyzer-expand-macro t
+          lsp-rust-analyzer-display-parameter-hints t
+          lsp-rust-analyzer-server-display-inlay-hints t))
 
 (use-package typescript-mode)
 
@@ -367,42 +373,42 @@
    (add-hook 'prog-mode-hook 'format-all-mode)
    (add-hook 'format-all-mode-hook 'format-all-ensure-formatter))
 
-(use-package lsp-ui
-  :hook (lsp-mode . lsp-ui-mode)
-  :config
-  (setq lsp-ui-peek-enable t
-        lsp-ui-doc-position 'bottom
-        lsp-ui-peek-always-show t
-        lsp-signature-auto-activate t
-        lsp-ui-doc-delay 0.0
-        lsp-ui-sideline-show-diagnostics t 
-        lsp-enable-symbol-highlighting t 
-        lsp-ui-doc-enable t 
-        lsp-ui-doc-show-with-cursor t 
-        lsp-ui-doc-show-with-mouse t 
-        lsp-lens-enable t 
-        lsp-headerline-breadcrumb-enable t 
-        lsp-ui-sideline-show-diagnostics t 
-        lsp-modeline-code-actions-enable t 
-        lsp-eldoc-enable-hover t 
-        lsp-completion-show-detail t 
-        lsp-completion-show-kind t 
-        lsp-ui-sideline-actions-icon lsp-ui-sideline-actions-icon-default))
+  (use-package lsp-ui
+    :hook (lsp-mode . lsp-ui-mode)
+    :config
+    (setq lsp-ui-peek-enable t
+          lsp-ui-doc-position 'bottom
+          lsp-ui-peek-always-show t
+          lsp-signature-auto-activate t
+          lsp-ui-doc-delay 0.0
+          lsp-ui-sideline-show-diagnostics t 
+          lsp-enable-symbol-highlighting t 
+          lsp-ui-doc-enable t 
+          lsp-ui-doc-show-with-cursor t 
+          lsp-ui-doc-show-with-mouse t 
+          lsp-lens-enable t 
+          lsp-headerline-breadcrumb-enable t 
+          lsp-ui-sideline-show-diagnostics t 
+          lsp-modeline-code-actions-enable t 
+          lsp-eldoc-enable-hover t 
+          lsp-completion-show-detail t 
+          lsp-completion-show-kind t 
+          lsp-ui-sideline-actions-icon lsp-ui-sideline-actions-icon-default))
 
-(use-package tree-sitter-langs
-      :after tree-sitter
-      :config
-      (tree-sitter-require 'tsx)
-      (tree-sitter-require 'typescript)
-      (tree-sitter-require 'rust)
-      (tree-sitter-require 'javascript)
-      (tree-sitter-require 'python)
-      (tree-sitter-require 'html)
-      (tree-sitter-require 'cpp)
-      (tree-sitter-require 'css)
-      (add-to-list 'tree-sitter-major-mode-language-alist '(typescript-ts-mode . tsx)))
-(global-tree-sitter-mode)
-(add-hook 'tree-sitter-after-on-hook #'tree-sitter-hl-mode)
+  (use-package tree-sitter-langs
+        :after tree-sitter
+        :config
+        (tree-sitter-require 'tsx)
+        (tree-sitter-require 'typescript)
+        (tree-sitter-require 'rust)
+        (tree-sitter-require 'javascript)
+        (tree-sitter-require 'python)
+        (tree-sitter-require 'html)
+        (tree-sitter-require 'cpp)
+        (tree-sitter-require 'css)
+        (add-to-list 'tree-sitter-major-mode-language-alist '(typescript-ts-mode . tsx)))
+  (global-tree-sitter-mode)
+  (add-hook 'tree-sitter-after-on-hook #'tree-sitter-hl-mode)
 
 (use-package magit
   :config
@@ -448,7 +454,8 @@
         corfu-auto t   ; Enable auto completion
         corfu-auto-prefix 1  ; Complete with less prefix keys
         corfu-auto-delay 0.0  ; No delay for completion
-        corfu-echo-documentation 0.0  ; Echo docs for current completion option
+        corfu-popupinfo-delay 0.0  ; No delay for completion
+        corfu-echo-documentation nil  ; Echo docs for current completion option
         corfu-quit-at-boundary 'insert)
   (global-corfu-mode 1)
   (advice-add #'lsp-completion-at-point :around #'cape-wrap-noninterruptible))
@@ -548,68 +555,14 @@
     (advice-add #'embark-completing-read-prompter
                     :around #'embark-hide-which-key-indicator)
 
-(use-package embark-consult
-  :hook
-  (embark-collect-mode . consult-preview-at-point-mode))
-
 (use-package orderless
     :custom
-    (orderless-matching-styles '(orderless-literal orderless-regexp orderless-flex))
+    ;; (orderless-matching-styles '(orderless-literal orderless-regexp orderless-flex))
+    (orderless-matching-styles '(orderless-literal orderless-regexp))
     (completion-styles '(orderless))
     (completion-category-overrides '((file (styles partial-completion)))))
 
 (use-package consult
-  :bind (;; C-c bindings (mode-specific-map)
-         ("C-c M-x" . consult-mode-command)
-         ("C-c h" . consult-history)
-         ("C-c k" . consult-kmacro)
-         ("C-c m" . consult-man)
-         ("C-c i" . consult-info)
-         ([remap Info-search] . consult-info)
-         ;; C-x bindings (ctl-x-map)
-         ("C-x M-:" . consult-complex-command)     ;; orig. repeat-complex-command
-         ("C-x b" . consult-buffer)                ;; orig. switch-to-buffer
-         ("C-x 4 b" . consult-buffer-other-window) ;; orig. switch-to-buffer-other-window
-         ("C-x 5 b" . consult-buffer-other-frame)  ;; orig. switch-to-buffer-other-frame
-         ("C-x r b" . consult-bookmark)            ;; orig. bookmark-jump
-         ("C-x p b" . consult-project-buffer)      ;; orig. project-switch-to-buffer
-         ;; Custom M-# bindings for fast register access
-         ("M-#" . consult-register-load)
-         ("M-'" . consult-register-store)          ;; orig. abbrev-prefix-mark (unrelated)
-         ("C-M-#" . consult-register)
-         ;; Other custom bindings
-         ("M-y" . consult-yank-pop)                ;; orig. yank-pop
-         ;; M-g bindings (goto-map)
-         ("M-g e" . consult-compile-error)
-         ("M-g f" . consult-flymake)               ;; Alternative: consult-flycheck
-         ("M-g g" . consult-goto-line)             ;; orig. goto-line
-         ("M-g M-g" . consult-goto-line)           ;; orig. goto-line
-         ("M-g o" . consult-outline)               ;; Alternative: consult-org-heading
-         ("M-g m" . consult-mark)
-         ("M-g k" . consult-global-mark)
-         ("M-g i" . consult-imenu)
-         ("M-g I" . consult-imenu-multi)
-         ;; M-s bindings (search-map)
-         ("M-s d" . consult-find)
-         ("M-s D" . consult-locate)
-         ("M-s g" . consult-grep)
-         ("M-s G" . consult-git-grep)
-         ("M-s r" . consult-ripgrep)
-         ("M-s l" . consult-line)
-         ("M-s L" . consult-line-multi)
-         ("M-s k" . consult-keep-lines)
-         ("M-s u" . consult-focus-lines)
-         ;; Isearch integration
-         ("M-s e" . consult-isearch-history)
-         :map isearch-mode-map
-         ("M-e" . consult-isearch-history)         ;; orig. isearch-edit-string
-         ("M-s e" . consult-isearch-history)       ;; orig. isearch-edit-string
-         ("M-s l" . consult-line)                  ;; needed by consult-line to detect isearch
-         ("M-s L" . consult-line-multi)            ;; needed by consult-line to detect isearch
-         ;; Minibuffer history
-         :map minibuffer-local-map
-         ("M-s" . consult-history)                 ;; orig. next-matching-history-element
-         ("M-r" . consult-history))                ;; orig. previous-matching-history-element
   :hook (completion-list-mode . consult-preview-at-point-mode)
   :init
   (setq register-preview-delay 0.5
@@ -626,7 +579,18 @@
    consult--source-recent-file consult--source-project-recent-file
    ;; :preview-key (kbd "M-.")
    :preview-key '(:debounce 0.4 any))
+   (defun consult--orderless-regexp-compiler (input type &rest _config)
+        (setq input (orderless-pattern-compiler input))
+        (cons
+        (mapcar (lambda (r) (consult--convert-regexp r type)) input)
+        (lambda (str) (orderless--highlight input str))))
+
+  (setq consult--regexp-compiler #'consult--orderless-regexp-compiler)
   (setq consult-narrow-key "<")) ;; (kbd "C-+")
+
+(use-package embark-consult
+  :hook
+  (embark-collect-mode . consult-preview-at-point-mode))
 
 (defun adi/org-setup()
     (org-indent-mode 1)
@@ -642,7 +606,9 @@
         (org-babel-do-load-languages 'org-babel-load-languages org-babel-load-languages))
         ad-do-it))
 
-(use-package evil-org)
+(use-package evil-org
+    :config
+    (evil-org-mode +1))
 
 (use-package org-cliplink)
 
@@ -653,35 +619,42 @@
 
 (use-package org-modern
    :config
-    (setq
-        org-auto-align-tags nil
-        org-tags-column 0
-        org-catch-invisible-edits 'show-and-error
-        org-special-ctrl-a/e t
-        org-insert-heading-respect-content t
-        org-hide-emphasis-markers t
-        org-pretty-entities t
-        org-ellipsis "…"
-        org-agenda-tags-column 0
-        org-agenda-block-separator ?─
-        org-agenda-time-grid
-        '((daily today require-timed)
-            (800 1000 1200 1400 1600 1800 2000)
-            " ┄┄┄┄┄ " "┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄")
-            org-agenda-current-time-string
-            "⭠ now ─────────────────────────────────────────────────")
-        (global-org-modern-mode))
+    (setq org-use-property-inheritance t ;;Might fix some bugs with org mode src block
+          org-src-preserve-indentation t
+          org-export-preserve-breaks t
+          org-log-into-drawer t
+          org-link-file-path-type 'relative
+          org-agenda-start-on-weekday nil
+          ;; org-ellipsis "  "                                     ;;fun symbols   ,    , 
+          org-enforce-todo-checkbox-dependencies t
+          org-enforce-todo-dependencies t
+          org-auto-align-tags nil
+          org-tags-column 0
+          org-catch-invisible-edits 'show-and-error
+          org-modern-checkbox nil
+          org-modern-table nil
+          org-insert-heading-respect-content t
+          org-hide-emphasis-markers t
+          org-pretty-entities t
+          org-ellipsis "…"
+          org-agenda-tags-column 0
+          org-agenda-block-separator ?─
+          org-agenda-time-grid
+          '((daily today require-timed)
+              (800 1000 1200 1400 1600 1800 2000)
+              " ┄┄┄┄┄ " "┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄")
+              org-agenda-current-time-string
+              "⭠ now ─────────────────────────────────────────────────")
+          (global-org-modern-mode))
 
+(setq org-log-done 'time)
 (setq org-todo-keywords
-    '((sequence "TODO(t)" "PROJ(p)" "ACTIVE(a)" "REVIEW(r)" "START(s)" "NEXT(n)" "WORKING(w)" "HOLD(h)" "|" "DONE(d)" "KILL(k)")
+    '((sequence "TODO(t)" "PROJ(p)" "ACTIVE(a)" "REVIEW(r)" "START(s)" "NEXT(N)" "WORKING(w)" "HOLD(h)" "|" "DONE(d)" "KILL(k)")
         (sequence "|" "OKAY(o)" "YES(y)" "NO(n)")))
 
-(require 'org-tempo)
-(add-to-list 'org-structure-template-alist '("la" . "src latex"))
-(add-to-list 'org-structure-template-alist '("ec" . "src emacs-lisp"))
-
-(setq org-agenda-files (directory-files-recursively "~/Documents/Denote/Todo/" "\\.org$"))
+(setq org-agenda-files '("~/Documents/Denote/Todo/"))
 (setq org-agenda-window-setup 'current-window
+    org-agenda-span 14
     org-agenda-start-day "-3d"
     org-agenda-inhibit-startup t)
 
@@ -737,7 +710,7 @@
 (general-define-key
     :keymaps 'evil-window-map
     "C-w" 'ace-window)
-(define-key minibuffer-mode-map (kbd "C-S-v") 'evil-paste-after)
+(keymap-set minibuffer-mode-map "C-S-v" 'evil-paste-after)
 (general-create-definer aadi/leader-keys
     :states '(normal visual emacs)
     :keymaps 'override
@@ -766,51 +739,107 @@
     :states '(normal visual emacs)
     "RET" 'dashboard-return)
 
+(general-define-key
+    :keymaps 'transient-map
+    "<escape>" 'transient-quit-one)
 (aadi/leader-keys
-    "g" '(:ignore t :which-key "magit")
+    :states '(normal motion)
+    "g" '(:ignore t :which-key "git")
+    "g s" 'consult-git-grep
     "g g" 'magit)
 
 (aadi/leader-keys
-   "n" '(:ignore t :which-key "denote")
-   "n c" 'denote-create-note-in-subdirectory
-   "n j" 'my-denote-journal
-   "n n" 'denote
-   "n N" 'denote-type
-   "n d" 'denote-date
-   "n s" 'denote-subdirectory
-   "n t" 'denote-template
-   "n i" 'denote-link
-   "n I" 'denote-link-add-links
-   "n b" 'denote-link-backlinks
-   "n f f" 'denote-link-find-file
-   "n f b" 'denote-link-find-backlink
-   "n r" 'denote-rename-file
-   "n R" 'denote-rename-file-using-front-matter)
-
-(general-define-key
-    :states 'normal
-    "m" '(avy-goto-char :which-key "avy goto char"))
+    :states '(normal motion)
+    "n" '(:ignore t :which-key "denote")
+    "n c" 'denote-create-note-in-subdirectory
+    "n j" 'my-denote-journal
+    "n n" 'denote
+    "n N" 'denote-type
+    "n d" 'denote-date
+    "n s" 'denote-subdirectory
+    "n t" 'denote-template
+    "n i" 'denote-link
+    "n I" 'denote-link-add-links
+    "n b" 'denote-link-backlinks
+    "n f f" 'denote-link-find-file
+    "n f b" 'denote-link-find-backlink
+    "n r" 'denote-rename-file
+    "n R" 'denote-rename-file-using-front-matter)
 
 (aadi/leader-keys
-    "b" '(:ignore t :which-key "buffer")
-    "b b" 'consult-buffer
-    "b k" 'kill-this-buffer)
+    :keymaps 'projectile-mode-map
+    :states '(normal motion)
+    "p" '(projectile-command-map :whick-key "projects"))
+
+  ;; (general-define-key
+  ;;   "M-S-x" 'execute-extended-command
+  ;;   "M-x" 'consult-mode-command)
 
 (aadi/leader-keys
+    :states '(normal motion)
+    "m" '(:ignore t :which-key "mode")
+    "m k" 'consult-kmacro)
+
+(aadi/leader-keys
+    :states '(normal motion)
+    "c" '(:ignore t :which-key "commands")
+    "c r" '(consult-complex-command :which-key "Complex Command repeat"))
+
+(aadi/leader-keys
+    :states '(normal motion)
     "f" '(:ignore t :which-key "files")
+    "f b" 'consult-bookmark
     "f r" 'consult-recent-file)
 
 (general-define-key
+    [remap projectile-ripgrep] 'consult-ripgrep
+    [remap projectile-find-file] 'consult-find)
+
+(general-define-key
+    :states '(normal motion)
+    "g" '(:ignore t :which-key "goto"))
+
+(general-define-key
+    :states '(normal motion)
+    :prefix "g"
+    "e" 'consult-compile-error
+    "f" 'consult-flycheck
+    "l" 'consult-goto-line)
+
+(general-define-key
+    :states '(normal motion)
+    "M-C-'" 'consult-register-load
+    "M-'" 'consult-register-store
+    "M-\"" 'consult-register)
+
+(general-define-key
+    :states '(normal motion)
+    ";" '(avy-goto-char :which-key "avy goto char"))
+
+(aadi/leader-keys
+    :states '(normal motion)
+    "b" '(:ignore t :which-key "buffer")
+    "b f" '(consult-line :which-key "filter buffer")
+    "b b" 'consult-buffer
+    "b B" 'bookmark-bmenu-list
+    "b k" 'kill-this-buffer)
+
+(general-define-key
+    :states '(normal motion)
+    "C-c a" 'org-capture)
+(general-define-key
     :keymaps 'org-mode-map
     :states 'normal
+    "<RET>" '+org/dwim-at-point
     "?\t" 'org-cycle
-    "<RET>" 'org-open-at-point
     "C-c a" 'link-hint-copy-link-at-point
     "z i" '(org-toggle-inline-images :whick-key "inline images"))
 
 (aadi/leader-keys org-mode-map
     "m" '(:ignore t :which-key "localleader"))
 (aadi/leader-local-keys org-mode-map
+    "h" '(:ignore t :which-key "heading")
+    "h h" 'consult-org-heading
     "l" '(:ignore t :which-key "link")
     "l c" 'org-cliplink)
 
@@ -845,3 +874,11 @@
    "k" #'helpful-key
    "F" #'helpful-function
    "C" #'helpful-command)
+
+(general-define-key
+   :states 'insert
+   "C-s" 'tempel-complete)
+(general-define-key
+   :keymaps 'tempel-map
+   "S-TAB" 'tempel-previous
+   "TAB" 'tempel-next)

@@ -1,0 +1,17 @@
+;;;; Emacs Bookmark Format Version 1;;;; -*- coding: utf-8-emacs; mode: lisp-data -*-
+;;; This format is meant to be slightly human-readable;
+;;; nevertheless, you probably don't want to edit it.
+;;; -*- End Of Bookmark File Format Version Stamp -*-
+(("org-capture-last-stored"
+ (filename . "~/Documents/Denote/Todo/20230219T133401--emacs-customization__elisp_emacs_ideas_programming.org")
+ (front-context-string . "#+title:      em")
+ (rear-context-string)
+ (position . 1)
+ (last-modified 25585 55435 699473 125000))
+("Competitive Programming"
+ (filename . "~/Personal/Projects/Rust/Cp-rust/src/main.rs")
+ (front-context-string . "if steps.len() >")
+ (rear-context-string . "sort();\n        ")
+ (position . 2787)
+ (last-modified 25584 28293 555919 136000))
+)
