@@ -3,11 +3,11 @@
 ;;; nevertheless, you probably don't want to edit it.
 ;;; -*- End Of Bookmark File Format Version Stamp -*-
 (("org-capture-last-stored"
- (filename . "~/Documents/Denote/Todo/20230219T133401--emacs-customization__elisp_emacs_ideas_programming.org")
- (front-context-string . "#+title:      em")
+ (filename . "~/Documents/Denote/Todo/20230220T001259--testing__emacs_org.org")
+ (front-context-string . "#+title:      te")
  (rear-context-string)
  (position . 1)
- (last-modified 25585 55435 699473 125000))
+ (last-modified 25586 28088 249082 411000))
 ("Competitive Programming"
  (filename . "~/Personal/Projects/Rust/Cp-rust/src/main.rs")
  (front-context-string . "if steps.len() >")

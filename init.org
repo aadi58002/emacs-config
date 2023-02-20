@@ -98,7 +98,17 @@
 * Custom Function
 *** Org autoload
 #+begin_src emacs-lisp
-(load (concat user-emacs-directory "autoload/+org"))
+(autoload #'+org/dwim-at-point (concat user-emacs-directory "autoload/+org"))
+#+end_src
+*** Denote archive
+#+begin_src emacs-lisp
+(defun my-denote-move-from-todo-to-archive ()
+  (interactive)
+  (call-interactively #'denote-rename-file)
+  (let* ((file (denote--rename-dired-file-or-prompt))
+         (archive-target (string-replace "/Todo/" "/Archived/" file)))
+    (rename-file file archive-target)
+    (denote-update-dired-buffers)))
 #+end_src
 *** Random Element from the list
 #+begin_src emacs-lisp
@@ -182,7 +192,11 @@
 (setq straight-use-package-by-default t) 
 (straight-use-package 'use-package)
 #+end_src
-
+*** Straight-x
+#+begin_src emacs-lisp
+(let ((straight-x-file (expand-file-name "straight/repos/straight.el/straight-x.el" user-emacs-directory)))
+  (if (file-exists-p straight-x-file) (load straight-x-file)))
+#+end_src
 * Packages
 ** Keybindings
 *** Evil
@@ -626,6 +640,7 @@
         corfu-popupinfo-delay 0.0  ; No delay for completion
         corfu-echo-documentation nil  ; Echo docs for current completion option
         corfu-quit-at-boundary 'insert)
+  (corfu-history-mode 1)
   (global-corfu-mode 1)
   (advice-add #'lsp-completion-at-point :around #'cape-wrap-noninterruptible))
 #+end_src
@@ -659,10 +674,11 @@
 *** Vertico
 #+begin_src emacs-lisp
 (use-package vertico
+    :straight (:files (:defaults "extensions/*"))
     :init
     (setq vertico-count 20
-            vertico-resize nil
-            vertico-cycle t)
+          vertico-resize nil
+          vertico-cycle t)
     (vertico-mode))
 #+end_src
 *** Marginalia

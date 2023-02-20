@@ -43,7 +43,6 @@
 ;;;###autoload
 (defun +org/mark-org-checkbox-to-next-symbol ()
   "Mark the org checkbox to the next symbol ir will make [ ] -> [-] -> [X] -> [ ]"
-  (interactive)
   (let ((match (and (org-at-item-checkbox-p) (match-string 1))))
     (org-toggle-checkbox (if (equal match "[ ]") '(16)))))
 

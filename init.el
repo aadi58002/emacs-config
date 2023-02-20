@@ -61,7 +61,15 @@
 (setq auto-save-file-name-transforms
       `((".*" ,temporary-file-directory t)))
 
-(load (concat user-emacs-directory "autoload/+org"))
+(autoload #'+org/dwim-at-point (concat user-emacs-directory "autoload/+org"))
+
+(defun my-denote-move-from-todo-to-archive ()
+  (interactive)
+  (call-interactively #'denote-rename-file)
+  (let* ((file (denote--rename-dired-file-or-prompt))
+         (archive-target (string-replace "/Todo/" "/Archived/" file)))
+    (rename-file file archive-target)
+    (denote-update-dired-buffers)))
 
 (defun random-element-of-list (items)
   (let* ((size (length items))
@@ -128,6 +136,9 @@
 (setq-default straight-vc-git-default-clone-depth 1)
 (setq straight-use-package-by-default t) 
 (straight-use-package 'use-package)
+
+(let ((straight-x-file (expand-file-name "straight/repos/straight.el/straight-x.el" user-emacs-directory)))
+  (if (file-exists-p straight-x-file) (load straight-x-file)))
 
 (eval-when-compile (setq evil-want-keybinding nil))
 
@@ -467,6 +478,7 @@
         corfu-popupinfo-delay 0.0  ; No delay for completion
         corfu-echo-documentation nil  ; Echo docs for current completion option
         corfu-quit-at-boundary 'insert)
+  (corfu-history-mode 1)
   (global-corfu-mode 1)
   (advice-add #'lsp-completion-at-point :around #'cape-wrap-noninterruptible))
 
@@ -494,10 +506,11 @@
     (add-to-list 'completion-at-point-functions #'cape-dabbrev))
 
 (use-package vertico
+    :straight (:files (:defaults "extensions/*"))
     :init
     (setq vertico-count 20
-            vertico-resize nil
-            vertico-cycle t)
+          vertico-resize nil
+          vertico-cycle t)
     (vertico-mode))
 
 (use-package marginalia
