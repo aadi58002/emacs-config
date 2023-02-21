@@ -116,10 +116,10 @@ A Reference function to study elisp
 #+end_src
 *** Random Element from the list
 #+begin_src emacs-lisp
-;; (defun random-element-of-list (items)
-;;   (let* ((size (length items))
-;;          (index (random size)))
-;;     (nth index items)))
+(defun random-element-of-list (items)
+  (let* ((size (length items))
+         (index (random size)))
+    (nth index items)))
 #+end_src
 *** Competitive layout
 #+begin_src emacs-lisp

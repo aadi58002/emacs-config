@@ -74,10 +74,10 @@
 ;;                                       (rename-file file archive-target)
 ;;                                       (find-file archive-target))(message "The buffer file is not a denote file"))))
 
-;; (defun random-element-of-list (items)
-;;   (let* ((size (length items))
-;;          (index (random size)))
-;;     (nth index items)))
+(defun random-element-of-list (items)
+  (let* ((size (length items))
+         (index (random size)))
+    (nth index items)))
 
 ;; (defun Competitive-coding-output-input-toggle ()
 ;;   (interactive)
