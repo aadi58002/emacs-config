@@ -1,9 +1,15 @@
-./org-roam.db
-./history
-./ snippets/
-./elpa/
-./emms/
-./eln-cache/
-./transient/
-./auto-save-list/
-./projectile-bookmarks.eld
+.cache/
+auto-save-list/
+eln-cache/
+emms/
+straight/
+transient/
+undohist/
+.gitignore
+.lsp-session-v1
+bookmarks
+early-init.el
+history
+places
+projectile-bookmarks.eld
+recentf

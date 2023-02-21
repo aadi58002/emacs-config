@@ -1,61 +1,65 @@
 ;;; init.el -*- lexical-binding: t; -*-
-(defvar native-comp-deferred-compilation-deny-list nil)
-(setenv "LSP_USE_PLISTS" "1")
-(setq create-lockfiles nil)
-(setq recentf-max-menu-items 25)
-(setq revert-without-query '(".*"))
-(recentf-mode 1)
-(save-place-mode 1)
-(setq read-process-output-max (* 1024 1024))
-(set-default-coding-systems 'utf-8)
-(setq inhibit-startup-message t)
-(setq make-backup-files nil)
-(setq visible-bell t)
-(setq-default tab-width 4)
-(setq-default evil-shift-width tab-width)
-(setq-default indent-tabs-mode nil)
-(global-display-line-numbers-mode t)
-(setq custom-file (locate-user-emacs-file "custom.el"))
-(load custom-file 'noerror 'nomessage)
+(defvar native-comp-deferred-compilation-deny-list nil)      ;;Native comp variable change in emacs 30
+(setenv "LSP_USE_PLISTS" "1")                                ;;Use a faster implmentation for list for lsp mode
+(setq create-lockfiles nil                                   ;;Don't want #..# files everywhere
+      make-backup-files nil)                                 ;;Don't want Redundant copy of files
+(setq recentf-max-menu-items 25)                             ;;Recent files opened list size
+(setq revert-without-query '(".*"))                          ;;Keeps the file in sync with what is on the disk without a prompt to confirm
+(recentf-mode 1)                                             ;;You can disable recent files here (just set 1 to -1)
+(save-place-mode 1)                                          ;;When you open a file the cursor will be in the same position at which you closed the file
+(setq read-process-output-max (* 1024 1024))                 ;;Emacs can read output from programs faster ( makes lsp mode faster )
+(set-default-coding-systems 'utf-8)                          ;;Don't want to have encoding errors
+(setq inhibit-startup-screen t)                              ;;Don't want to see the emacs startup screen
+(setq visible-bell t)                                        ;;Blinks the top bar and modeline to the color set in doom-themes-visual-bell
+(setq-default tab-width 4)                                   ;;The tab width battle continues
+(setq-default evil-shift-width tab-width)                    ;;We want the tab width to be same in the vim mode of emacs
+(setq-default indent-tabs-mode nil)                          ;;Don't want formatters to insert <TAB> just use spaces
+
+(setq use-short-answers t)                                   ;; In prompt answer instead of typing complete yes with this y will work as well
+
+(global-display-line-numbers-mode t)                         ;;All people like line numbers right
 (setq display-line-numbers-type 'relative
       scroll-margin 30)
-(setq electric-pair-preserve-balance nil)
-(setq dired-recursive-copies 'always)
-(setq dired-recursive-deletes 'always)
-(setq delete-by-moving-to-trash t)
-(setq dired-listing-switches
-      "-AGFhlv --group-directories-first --time-style=long-iso")
-(setq dired-dwim-target t)
-(setq dired-auto-revert-buffer #'dired-directory-changed-p) ; also see `dired-do-revert-buffer'
-(setq dired-make-directory-clickable t) ; Emacs 29.1
-(setq dired-free-space nil) ; Emacs 29.1
+
+(setq custom-file (locate-user-emacs-file "custom.el"))
+(load custom-file 'noerror 'nomessage)
+
+(setq electric-pair-preserve-balance t)
+(setq dired-recursive-copies 'always 
+      dired-recursive-deletes 'always)
+
+(setq delete-by-moving-to-trash t 
+      dired-listing-switches "-AGFhlv --group-directories-first --time-style=long-iso")
+(setq dired-dwim-target t
+      dired-auto-revert-buffer #'dired-directory-changed-p
+      dired-make-directory-clickable nil
+      dired-free-space nil)
+
 (setq resize-mini-windows t)
 
 (add-hook 'dired-mode-hook #'hl-line-mode)
-(setq dired-isearch-filenames 'dwim)
-(setq dired-create-destination-dirs 'ask)
-(setq dired-vc-rename-file t)
-(setq dired-do-revert-buffer (lambda (dir) (not (file-remote-p dir))))
-(setq use-short-answers t)
-(setq dired-clean-up-buffers-too t)
-(setq dired-clean-confirm-killing-deleted-buffers t)
-(setq dired-x-hands-off-my-keys t)    ; easier to show the keys I use
-(setq dired-bind-man nil)
-(setq dired-bind-info nil)
-(setq delete-by-moving-to-trash t
+(setq dired-isearch-filenames 'dwim 
+      dired-create-destination-dirs 'ask 
+      dired-vc-rename-file t 
+      dired-do-revert-buffer (lambda (dir  (not (file-remote-p dir ))) )
+      dired-clean-up-buffers-too t 
+      dired-clean-confirm-killing-deleted-buffers t 
+      dired-x-hands-off-my-keys t     ; easier to show the keys I use
+      dired-bind-man nil 
+      dired-bind-info nil 
+      delete-by-moving-to-trash t
       +vertico-consult-fd-args "fd -p --color=never -i --type f -E node_modules --regex")
 (electric-pair-mode 1)
 (set-fringe-mode 10)
 (set-face-attribute 'default nil :font "JetBrains Mono" :height 100)
 (setq auto-save-default t
-            truncate-string-ellipsis "<>"
-            which-key-idle-delay 0.5
-            evil-snipe-scope 'whole-visible)
-(put 'narrow-to-region 'disabled nil)
+      truncate-string-ellipsis "<>"
+      which-key-idle-delay 0.5
+      evil-snipe-scope 'whole-visible)
 (setq x-stretch-cursor t
-            window-combination-resize t
-            global-auto-revert-mode 1
-            global-auto-revert-non-file-buffers t)
+      window-combination-resize t
+      global-auto-revert-mode 1
+      global-auto-revert-non-file-buffers t)
 (setq backup-directory-alist
       `((".*" . ,temporary-file-directory)))
 (setq auto-save-file-name-transforms
@@ -63,17 +67,54 @@
 
 (autoload #'+org/dwim-at-point (concat user-emacs-directory "autoload/+org"))
 
-(defun my-denote-move-from-todo-to-archive ()
-  (interactive)
-  (let* ((file buffer-file-name))
-    (if (denote-file-is-note-p file)(let* ((archive-target (string-replace "/Todo/" "/Archived/" file)))
-                                      (rename-file file archive-target)
-                                      (find-file archive-target))(message "The buffer file is not a denote file"))))
+;; (defun my-denote-move-from-todo-to-archive ()
+;;   (interactive)
+;;   (let* ((file buffer-file-name))
+;;     (if (denote-file-is-note-p file)(let* ((archive-target (string-replace "/Todo/" "/Archived/" file)))
+;;                                       (rename-file file archive-target)
+;;                                       (find-file archive-target))(message "The buffer file is not a denote file"))))
 
-(defun random-element-of-list (items)
-  (let* ((size (length items))
-         (index (random size)))
-    (nth index items)))
+;; (defun random-element-of-list (items)
+;;   (let* ((size (length items))
+;;          (index (random size)))
+;;     (nth index items)))
+
+;; (defun Competitive-coding-output-input-toggle ()
+;;   (interactive)
+;;   (delete-other-windows)
+;;   (kill-matching-buffers "*.in")
+;;   (evil-window-vsplit)
+;;   (find-file (expand-file-name "inputf.in" default-directory))
+;;   (evil-window-split)
+;;   (find-file (expand-file-name "outputf.in" default-directory))
+;;   (other-window 1)
+;;   (enlarge-window-horizontally 40))
+
+;; (defun rust-reset()
+;;   (interactive)
+;;   (widen)
+;;   (erase-buffer)
+;;   (insert "chef")
+;;   (tempel-expand)
+;;   (narrow-to-defun))
+
+;; (defun code-input-refresh()
+;;   (interactive)
+;;   (write-region (current-kill 0) nil (concat default-directory "inputf.in") nil)
+;;   (Competitive-coding-output-input-toggle))
+
+;; source: http://steve.yegge.googlepages.com/my-dot-emacs-file
+;; (defun copy-current-file (new-name)
+;;     "Copy current file to a NEW-NAME."
+;;     (interactive (list
+;;                 (read-string "New name: " (current-kill 0) nil (current-kill 0))))
+;;     (let ((name (buffer-name))
+;;         (filename (buffer-file-name)))
+;;     (if (not filename)
+;;         (message "Buffer '%s' is not visiting a file!" name)
+;;         (if (get-buffer new-name)
+;;             (message "A buffer named '%s' already exists!" new-name)
+;;             (copy-file filename (concat (replace-regexp-in-string " " "" (capitalize (replace-regexp-in-string "[^[:word:]_]" " " new-name))) ".rs") 1)))))
 
 (defun kitty-async-process ()
   (interactive)
@@ -82,43 +123,6 @@
 (defun brave-vscode-docs ()
   (interactive)
   (start-process "brave" nil "setsid" "brave" "--incognito" "https://code.visualstudio.com/api/language-extensions/language-server-extension-guide"))
-
-(defun Competitive-coding-output-input-toggle ()
-  (interactive)
-  (delete-other-windows)
-  (kill-matching-buffers "*.in")
-  (evil-window-vsplit)
-  (find-file (expand-file-name "inputf.in" default-directory))
-  (evil-window-split)
-  (find-file (expand-file-name "outputf.in" default-directory))
-  (other-window 1)
-  (enlarge-window-horizontally 40))
-
-(defun rust-reset()
-  (interactive)
-  (widen)
-  (erase-buffer)
-  (insert "chef")
-  (tempel-expand)
-  (narrow-to-defun))
-
-(defun code-input-refresh()
-  (interactive)
-  (write-region (current-kill 0) nil (concat default-directory "inputf.in") nil)
-  (Competitive-coding-output-input-toggle))
-
-;; source: http://steve.yegge.googlepages.com/my-dot-emacs-file
-(defun copy-current-file (new-name)
-    "Copy current file to a NEW-NAME."
-    (interactive (list
-                (read-string "New name: " (current-kill 0) nil (current-kill 0))))
-    (let ((name (buffer-name))
-        (filename (buffer-file-name)))
-    (if (not filename)
-        (message "Buffer '%s' is not visiting a file!" name)
-        (if (get-buffer new-name)
-            (message "A buffer named '%s' already exists!" new-name)
-            (copy-file filename (concat (replace-regexp-in-string " " "" (capitalize (replace-regexp-in-string "[^[:word:]_]" " " new-name))) ".rs") 1)))))
 
 (defvar bootstrap-version)
 (let ((bootstrap-file
@@ -148,13 +152,13 @@
         (setq evil-undo-system 'undo-fu)
       :config
       (evil-mode 1))
-  (setq evil-move-cursor-back nil
-      evil-want-fine-undo t
-      evil-move-beyond-eol t
-      evil-respect-visual-line-mode t
-      evil-org-retain-visual-state-on-shift t
-      evil-vsplit-window-right t
-      evil-split-window-below t)
+(setq evil-move-cursor-back nil
+    evil-want-fine-undo t
+    evil-move-beyond-eol t
+    evil-respect-visual-line-mode t
+    evil-org-retain-visual-state-on-shift t
+    evil-vsplit-window-right t
+    evil-split-window-below t)
 
 (use-package general
   :config
@@ -165,12 +169,12 @@
     :config
     (evil-collection-init))
 
-(use-package docker
-   :config
-   (setq tramp-docker-program "podman"
-         docker-command "podman"
-         docker-composee-command "podman-compose"
-         tramp-docker-method "podman"))
+;; (use-package docker
+;;    :config
+;;    (setq tramp-docker-program "podman"
+;;          docker-command "podman"
+;;          docker-composee-command "podman-compose"
+;;          tramp-docker-method "podman"))
 
 (use-package pdf-tools
    :config
@@ -190,11 +194,11 @@
 
 (use-package pulsar
    :config
-   (setq pulsar-pulse t)
-   (setq pulsar-delay 0.055)
-   (setq pulsar-iterations 10)
-   (setq pulsar-face 'pulsar-magenta)
-   (setq pulsar-highlight-face 'pulsar-yellow)
+   (setq pulsar-pulse t 
+         pulsar-delay 0.055 
+         pulsar-iterations 10 
+         pulsar-face 'pulsar-magenta
+         pulsar-highlight-face 'pulsar-yellow)
    (add-hook 'next-error-hook #'pulsar-pulse-line)
    (add-hook 'consult-after-jump-hook #'pulsar-recenter-top)
    (add-hook 'consult-after-jump-hook #'pulsar-reveal-entry)
@@ -218,21 +222,21 @@
   (global-prettify-symbols-mode)
   (global-ligature-mode t))
 
-(use-package emms
-  :init
-    (require 'emms-setup)
-    (emms-all)
-    (setq emms-source-file-default-directory "~/Music/"
-          emms-info-functions '(emms-info-native)
-          emms-player-list '(emms-player-mpv)
-          emms-repeat-track t
-          emms-mode-line-mode t
-          emms-playlist-buffer-name "*Music*"
-          emms-playing-time-mode t
-          emms-info-asynchronously t
-          emms-source-file-directory-tree-function 'emms-source-file-directory-tree-find)
-    (emms-add-directory-tree "~/Music/")
-    (emms-add-directory-tree "~/Videos/Test Video"))
+;; (use-package emms
+;;   :init
+;;   (require 'emms-setup)
+;;   (emms-all)
+;;   (setq emms-source-file-default-directory "~/Music/"
+;;         emms-info-functions '(emms-info-native)
+;;         emms-player-list '(emms-player-mpv)
+;;         emms-repeat-track t
+;;         emms-mode-line-mode t
+;;         emms-playlist-buffer-name "*Music*"
+;;         emms-playing-time-mode t
+;;         emms-info-asynchronously t
+;;         emms-source-file-directory-tree-function 'emms-source-file-directory-tree-find)
+;;   (emms-add-directory-tree "~/Music/")
+;;   (emms-add-directory-tree "~/Videos/Test Video"))
 
 (use-package helpful)
 
@@ -283,27 +287,27 @@
     (load-theme 'doom-dracula t)
     (custom-set-faces
         '(doom-themes-visual-bell (( t(:background "#00FFFF"))))
-        '(emms-playlist-selected-face (( t(:foreground "royal blue"))))
-        '(emms-playlist-track-face (( t(:foreground "#5da3e7"))))
-        '(emms-playlist-selected-face (( t(:foreground "royal blue"))))
-        '(emms-playlist-track-face (( t(:foreground "#5da3e7"))))
+        ;; '(emms-playlist-selected-face (( t(:foreground "royal blue"))))
+        ;; '(emms-playlist-track-face (( t(:foreground "#5da3e7"))))
+        ;; '(emms-playlist-selected-face (( t(:foreground "royal blue"))))
+        ;; '(emms-playlist-track-face (( t(:foreground "#5da3e7"))))
         '(org-ellipsis (( t(:foreground "#C678DD"))))))
 
-  ;; (use-package modus-themes
-  ;;    :config
-  ;;    (setq modus-themes-italic-constructs t
-  ;;          modus-themes-bold-constructs t)
-  ;;    (load-theme 'modus-vivendi t))
+;; (use-package modus-themes
+;;    :config
+;;    (setq modus-themes-italic-constructs t
+;;          modus-themes-bold-constructs t)
+;;    (load-theme 'modus-vivendi t))
 
 (use-package doom-modeline
     :init (doom-modeline-mode 1)
     :config
-     (display-battery-mode 1)
-     (setq doom-modeline-project-detection 'truncate-upto-project)
-     (setq doom-modeline-enable-word-count t)
-     (setq doom-modeline-buffer-encoding nil)
-     (setq doom-modeline-env-version t)
-     (setq doom-modeline-hud t))
+    (display-battery-mode 1)
+    (setq doom-modeline-project-detection 'truncate-upto-project
+          doom-modeline-enable-word-count t
+          doom-modeline-buffer-encoding nil
+          doom-modeline-env-version t
+          doom-modeline-hud t))
 
 (use-package all-the-icons)
 
@@ -342,29 +346,28 @@
   (prog-mode . lsp-mode)
   (web-mode . lsp-mode))
 
-  (use-package rustic
-    :config
-      (setq 
-          lsp-rust-analyzer-display-chaining-hints t
-          lsp-rust-analyzer-expand-macro t
-          lsp-rust-analyzer-display-parameter-hints t
-          lsp-rust-analyzer-server-display-inlay-hints t))
+(use-package rustic
+  :config
+  (setq lsp-rust-analyzer-display-chaining-hints t
+        lsp-rust-analyzer-expand-macro t
+        lsp-rust-analyzer-display-parameter-hints t
+        lsp-rust-analyzer-server-display-inlay-hints t))
 
 (use-package typescript-mode)
 
-(setq web-mode-markup-indent-offset 2)
-(setq web-mode-code-indent-offset 2)
-(setq web-mode-css-indent-offset 2)
+(setq web-mode-markup-indent-offset 2
+      web-mode-code-indent-offset 2
+      web-mode-css-indent-offset 2)
 (use-package web-mode
     :commands web-mode)
 
-(add-to-list 'auto-mode-alist '("\\.svelte\\'" . web-mode))
-(setq web-mode-engines-alist
-    '(("svelte" . "\\.svelte\\'")))
+;; (add-to-list 'auto-mode-alist '("\\.svelte\\'" . web-mode))
+;; (setq web-mode-engines-alist
+;;     '(("svelte" . "\\.svelte\\'")))
 
-(use-package ccls)
+;; (use-package ccls)
 
-(use-package solidity-mode)
+;; (use-package solidity-mode)
 
 (use-package lsp-pyright
   :hook (python-mode . (lambda ()
@@ -418,7 +421,7 @@
 
 (use-package magit
   :config
-    (setq magit-display-buffer-function #'magit-display-buffer-fullframe-status-v1))
+  (setq magit-display-buffer-function #'magit-display-buffer-fullframe-status-v1))
 
 (use-package git-gutter-fringe
     :config
@@ -490,14 +493,14 @@
                    crm-separator)
                   (car args))
           (cdr args)))
-  (advice-add #'completing-read-multiple :filter-args #'crm-indicator)
+    (advice-add #'completing-read-multiple :filter-args #'crm-indicator)
 
-  (setq minibuffer-prompt-properties
-        '(read-only t cursor-intangible t face minibuffer-prompt))
-  (add-hook 'minibuffer-setup-hook #'cursor-intangible-mode)
-  (setq enable-recursive-minibuffers t)
-  (setq completion-cycle-threshold 3)
-  (setq tab-always-indent 'complete))
+    (setq minibuffer-prompt-properties
+            '(read-only t cursor-intangible t face minibuffer-prompt))
+    (add-hook 'minibuffer-setup-hook #'cursor-intangible-mode)
+    (setq enable-recursive-minibuffers t
+          completion-cycle-threshold 3
+          tab-always-indent 'complete))
 
 (use-package cape
     :init
@@ -590,7 +593,6 @@
 (use-package orderless
     :custom
     ;; (orderless-matching-styles '(orderless-literal orderless-regexp orderless-flex))
-    (orderless-matching-styles '(orderless-literal orderless-regexp))
     (completion-styles '(orderless))
     (completion-category-overrides '((file (styles partial-completion)))))
 
@@ -624,12 +626,6 @@
   :hook
   (embark-collect-mode . consult-preview-at-point-mode))
 
-(defun adi/org-setup()
-    (org-indent-mode 1)
-    (setq org-pretty-entities 1)
-    (setq org-confirm-babel-evaluate nil))
-
-(add-hook 'org-mode-hook 'adi/org-setup)
 (defadvice org-babel-execute-src-block (around load-language nil activate)
     "Load language if needed"
     (let ((language (org-element-property :language (org-element-at-point))))
@@ -652,6 +648,7 @@
 (use-package org-modern
    :config
     (setq org-use-property-inheritance t ;;Might fix some bugs with org mode src block
+          org-confirm-babel-evaluate nil
           org-src-preserve-indentation t
           org-export-preserve-breaks t
           org-log-into-drawer t
@@ -684,7 +681,7 @@
     '((sequence "TODO(t)" "PROJ(p)" "ACTIVE(a)" "REVIEW(r)" "START(s)" "NEXT(N)" "WORKING(w)" "HOLD(h)" "|" "DONE(d)" "KILL(k)")
         (sequence "|" "OKAY(o)" "YES(y)" "NO(n)")))
 
-(setq org-agenda-files '("~/Documents/Denote/Todo/"))
+;; (setq org-agenda-files '("~/Documents/Denote/Todo/"))
 (setq org-agenda-window-setup 'current-window
     org-agenda-span 14
     org-agenda-start-day "-3d"
@@ -693,7 +690,7 @@
 (use-package denote
     :straight (denote :type git :host github :repo "protesilaos/denote")
     :config
-    (setq denote-directory "~/Documents/Denote")
+    ;; (setq denote-directory "~/Documents/Denote")
     (setq denote-known-keywords '())
     (setq denote-infer-keywords t)
     (setq denote-sort-keywords t)
@@ -868,8 +865,8 @@
     "z i" '(org-toggle-inline-images :whick-key "inline images"))
 
 (aadi/leader-keys org-mode-map
-    "m" '(:ignore t :which-key "localleader")
-    
+    "m" '(:ignore t :which-key "org localleader")
+    ;; "a" 'my-denote-move-from-todo-to-archive
 )
 (aadi/leader-local-keys org-mode-map
     "h" '(:ignore t :which-key "heading")
@@ -878,7 +875,7 @@
     "l c" 'org-cliplink)
 
 (aadi/leader-keys lsp-mode-map
-    "m" '(:ignore t :which-key "localleader"))
+    "m" '(:ignore t :which-key "lsp localleader"))
 (general-define-key
     :keymaps 'lsp-mode-map
     :states 'normal
