@@ -65,11 +65,10 @@
 
 (defun my-denote-move-from-todo-to-archive ()
   (interactive)
-  (call-interactively #'denote-rename-file)
-  (let* ((file (denote--rename-dired-file-or-prompt))
-         (archive-target (string-replace "/Todo/" "/Archived/" file)))
-    (rename-file file archive-target)
-    (denote-update-dired-buffers)))
+  (let* ((file buffer-file-name))
+    (if (denote-file-is-note-p file)(let* ((archive-target (string-replace "/Todo/" "/Archived/" file)))
+                                      (rename-file file archive-target)
+                                      (find-file archive-target))(message "The buffer file is not a denote file"))))
 
 (defun random-element-of-list (items)
   (let* ((size (length items))
@@ -84,16 +83,16 @@
   (interactive)
   (start-process "brave" nil "setsid" "brave" "--incognito" "https://code.visualstudio.com/api/language-extensions/language-server-extension-guide"))
 
-    (defun Competitive-coding-output-input-toggle ()
-      (interactive)
-      (delete-other-windows)
-      (kill-matching-buffers "*.in")
-      (evil-window-vsplit)
-      (find-file (expand-file-name "inputf.in" default-directory))
-      (evil-window-split)
-      (find-file (expand-file-name "outputf.in" default-directory))
-      (other-window 1)
-      (enlarge-window-horizontally 40))
+(defun Competitive-coding-output-input-toggle ()
+  (interactive)
+  (delete-other-windows)
+  (kill-matching-buffers "*.in")
+  (evil-window-vsplit)
+  (find-file (expand-file-name "inputf.in" default-directory))
+  (evil-window-split)
+  (find-file (expand-file-name "outputf.in" default-directory))
+  (other-window 1)
+  (enlarge-window-horizontally 40))
 
 (defun rust-reset()
   (interactive)
@@ -133,7 +132,7 @@
         (goto-char (point-max))
         (eval-print-last-sexp)))
     (load bootstrap-file nil 'nomessage))
-(setq-default straight-vc-git-default-clone-depth 1)
+(setq-default straight-vc-git-default-clone-depth '(1 single-branch))
 (setq straight-use-package-by-default t) 
 (straight-use-package 'use-package)
 
@@ -181,20 +180,6 @@
 
 (use-package tempel
   :init
-  (defun tempel-setup-capf ()
-    ;; Add the Tempel Capf to `completion-at-point-functions'.
-    ;; `tempel-expand' only triggers on exact matches. Alternatively use
-    ;; `tempel-complete' if you want to see all matches, but then you
-    ;; should also configure `tempel-trigger-prefix', such that Tempel
-    ;; does not trigger too often when you don't expect it. NOTE: We add
-    ;; `tempel-expand' *before* the main programming mode Capf, such
-    ;; that it will be tried first.
-    (setq-local completion-at-point-functions
-                (cons #'tempel-expand
-                      completion-at-point-functions)))
-
-  (add-hook 'prog-mode-hook 'tempel-setup-capf)
-  (add-hook 'text-mode-hook 'tempel-setup-capf)
   (global-tempel-abbrev-mode))
 
 (use-package tempel-collection)
@@ -459,10 +444,7 @@
 
 (use-package projectile
   :init
-  (projectile-mode +1)
-  :bind (:map projectile-mode-map
-              ("s-p" . projectile-command-map)
-              ("C-c p" . projectile-command-map)))
+  (projectile-mode +1))
 
 (use-package rainbow-delimiters
   :hook (prog-mode . rainbow-delimiters-mode))
@@ -481,6 +463,23 @@
   (corfu-history-mode 1)
   (global-corfu-mode 1)
   (advice-add #'lsp-completion-at-point :around #'cape-wrap-noninterruptible))
+
+(defun corfu-enable-in-minibuffer ()
+  "Enable Corfu in the minibuffer if `completion-at-point' is bound."
+  (when (where-is-internal #'completion-at-point (list (current-local-map)))
+    (setq-local corfu-auto t) ;; Enable/disable auto completion
+    (setq-local corfu-echo-delay nil ;; Disable automatic echo and popup
+                corfu-popupinfo-delay nil)
+    (corfu-mode 1)))
+
+(add-hook 'minibuffer-setup-hook #'corfu-enable-in-minibuffer)
+
+(defun corfu-move-to-minibuffer ()
+  (interactive)
+  (let ((completion-extra-properties corfu--extra)
+        completion-cycle-threshold completion-cycling)
+    (apply #'consult-completion-in-region completion-in-region--data)))
+(define-key corfu-map "\M-m" #'corfu-move-to-minibuffer)
 
 (use-package emacs
   :init
@@ -505,6 +504,16 @@
     (add-to-list 'completion-at-point-functions #'cape-file)
     (add-to-list 'completion-at-point-functions #'cape-dabbrev))
 
+(defun +embark-live-vertico ()
+  "Shrink Vertico minibuffer when `embark-live' is active."
+  (when-let (win (and (string-prefix-p "*Embark Live" (buffer-name))
+                      (active-minibuffer-window)))
+    (with-selected-window win
+      (when (and (bound-and-true-p vertico--input)
+                 (fboundp 'vertico-multiform-unobtrusive))
+        (vertico-multiform-unobtrusive)))))
+
+(add-hook 'embark-collect-mode-hook #'+embark-live-vertico)
 (use-package vertico
     :straight (:files (:defaults "extensions/*"))
     :init
@@ -859,7 +868,9 @@
     "z i" '(org-toggle-inline-images :whick-key "inline images"))
 
 (aadi/leader-keys org-mode-map
-    "m" '(:ignore t :which-key "localleader"))
+    "m" '(:ignore t :which-key "localleader")
+    
+)
 (aadi/leader-local-keys org-mode-map
     "h" '(:ignore t :which-key "heading")
     "h h" 'consult-org-heading
