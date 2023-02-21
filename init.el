@@ -33,7 +33,7 @@
 (setq dired-dwim-target t
       dired-auto-revert-buffer #'dired-directory-changed-p
       dired-make-directory-clickable nil
-      dired-free-space nil
+      dired-free-space nil)
 
 (setq resize-mini-windows t)
 
@@ -67,54 +67,54 @@
 
 (autoload #'+org/dwim-at-point (concat user-emacs-directory "autoload/+org"))
 
-;; (defun my-denote-move-from-todo-to-archive ()
-;;   (interactive)
-;;   (let* ((file buffer-file-name))
-;;     (if (denote-file-is-note-p file)(let* ((archive-target (string-replace "/Todo/" "/Archived/" file)))
-;;                                       (rename-file file archive-target)
-;;                                       (find-file archive-target))(message "The buffer file is not a denote file"))))
+(defun my-denote-move-from-todo-to-archive ()
+  (interactive)
+  (let* ((file buffer-file-name))
+    (if (denote-file-is-note-p file)(let* ((archive-target (string-replace "/Todo/" "/Archived/" file)))
+                                      (rename-file file archive-target)
+                                      (find-file archive-target))(message "The buffer file is not a denote file"))))
 
-;; (defun random-element-of-list (items)
-;;   (let* ((size (length items))
-;;          (index (random size)))
-;;     (nth index items)))
+(defun random-element-of-list (items)
+  (let* ((size (length items))
+         (index (random size)))
+    (nth index items)))
 
-;; (defun Competitive-coding-output-input-toggle ()
-;;   (interactive)
-;;   (delete-other-windows)
-;;   (kill-matching-buffers "*.in")
-;;   (evil-window-vsplit)
-;;   (find-file (expand-file-name "inputf.in" default-directory))
-;;   (evil-window-split)
-;;   (find-file (expand-file-name "outputf.in" default-directory))
-;;   (other-window 1)
-;;   (enlarge-window-horizontally 40))
+(defun Competitive-coding-output-input-toggle ()
+  (interactive)
+  (delete-other-windows)
+  (kill-matching-buffers "*.in")
+  (evil-window-vsplit)
+  (find-file (expand-file-name "inputf.in" default-directory))
+  (evil-window-split)
+  (find-file (expand-file-name "outputf.in" default-directory))
+  (other-window 1)
+  (enlarge-window-horizontally 40))
 
-;; (defun rust-reset()
-;;   (interactive)
-;;   (widen)
-;;   (erase-buffer)
-;;   (insert "chef")
-;;   (tempel-expand)
-;;   (narrow-to-defun))
+(defun rust-reset()
+  (interactive)
+  (widen)
+  (erase-buffer)
+  (insert "chef")
+  (tempel-expand)
+  (narrow-to-defun))
 
-;; (defun code-input-refresh()
-;;   (interactive)
-;;   (write-region (current-kill 0) nil (concat default-directory "inputf.in") nil)
-;;   (Competitive-coding-output-input-toggle))
+(defun code-input-refresh()
+  (interactive)
+  (write-region (current-kill 0) nil (concat default-directory "inputf.in") nil)
+  (Competitive-coding-output-input-toggle))
 
 ;; source: http://steve.yegge.googlepages.com/my-dot-emacs-file
-;; (defun copy-current-file (new-name)
-;;     "Copy current file to a NEW-NAME."
-;;     (interactive (list
-;;                 (read-string "New name: " (current-kill 0) nil (current-kill 0))))
-;;     (let ((name (buffer-name))
-;;         (filename (buffer-file-name)))
-;;     (if (not filename)
-;;         (message "Buffer '%s' is not visiting a file!" name)
-;;         (if (get-buffer new-name)
-;;             (message "A buffer named '%s' already exists!" new-name)
-;;             (copy-file filename (concat (replace-regexp-in-string " " "" (capitalize (replace-regexp-in-string "[^[:word:]_]" " " new-name))) ".rs") 1)))))
+(defun copy-current-file (new-name)
+    "Copy current file to a NEW-NAME."
+    (interactive (list
+                (read-string "New name: " (current-kill 0) nil (current-kill 0))))
+    (let ((name (buffer-name))
+        (filename (buffer-file-name)))
+    (if (not filename)
+        (message "Buffer '%s' is not visiting a file!" name)
+        (if (get-buffer new-name)
+            (message "A buffer named '%s' already exists!" new-name)
+            (copy-file filename (concat (replace-regexp-in-string " " "" (capitalize (replace-regexp-in-string "[^[:word:]_]" " " new-name))) ".rs") 1)))))
 
 (defun kitty-async-process ()
   (interactive)
@@ -169,12 +169,12 @@
     :config
     (evil-collection-init))
 
-;; (use-package docker
-;;    :config
-;;    (setq tramp-docker-program "podman"
-;;          docker-command "podman"
-;;          docker-composee-command "podman-compose"
-;;          tramp-docker-method "podman"))
+(use-package docker
+   :config
+   (setq tramp-docker-program "podman"
+         docker-command "podman"
+         docker-composee-command "podman-compose"
+         tramp-docker-method "podman"))
 
 (use-package pdf-tools
    :config
@@ -222,21 +222,21 @@
   (global-prettify-symbols-mode)
   (global-ligature-mode t))
 
-;; (use-package emms
-;;   :init
-;;   (require 'emms-setup)
-;;   (emms-all)
-;;   (setq emms-source-file-default-directory "~/Music/"
-;;         emms-info-functions '(emms-info-native)
-;;         emms-player-list '(emms-player-mpv)
-;;         emms-repeat-track t
-;;         emms-mode-line-mode t
-;;         emms-playlist-buffer-name "*Music*"
-;;         emms-playing-time-mode t
-;;         emms-info-asynchronously t
-;;         emms-source-file-directory-tree-function 'emms-source-file-directory-tree-find)
-;;   (emms-add-directory-tree "~/Music/")
-;;   (emms-add-directory-tree "~/Videos/Test Video"))
+(use-package emms
+  :init
+  (require 'emms-setup)
+  (emms-all)
+  (setq emms-source-file-default-directory "~/Music/"
+        emms-info-functions '(emms-info-native)
+        emms-player-list '(emms-player-mpv)
+        emms-repeat-track t
+        emms-mode-line-mode t
+        emms-playlist-buffer-name "*Music*"
+        emms-playing-time-mode t
+        emms-info-asynchronously t
+        emms-source-file-directory-tree-function 'emms-source-file-directory-tree-find)
+  (emms-add-directory-tree "~/Music/")
+  (emms-add-directory-tree "~/Videos/Test Video"))
 
 (use-package helpful)
 
@@ -287,10 +287,10 @@
     (load-theme 'doom-dracula t)
     (custom-set-faces
         '(doom-themes-visual-bell (( t(:background "#00FFFF"))))
-        ;; '(emms-playlist-selected-face (( t(:foreground "royal blue"))))
-        ;; '(emms-playlist-track-face (( t(:foreground "#5da3e7"))))
-        ;; '(emms-playlist-selected-face (( t(:foreground "royal blue"))))
-        ;; '(emms-playlist-track-face (( t(:foreground "#5da3e7"))))
+        '(emms-playlist-selected-face (( t(:foreground "royal blue"))))
+        '(emms-playlist-track-face (( t(:foreground "#5da3e7"))))
+        '(emms-playlist-selected-face (( t(:foreground "royal blue"))))
+        '(emms-playlist-track-face (( t(:foreground "#5da3e7"))))
         '(org-ellipsis (( t(:foreground "#C678DD"))))))
 
 ;; (use-package modus-themes
@@ -361,13 +361,11 @@
 (use-package web-mode
     :commands web-mode)
 
-;; (add-to-list 'auto-mode-alist '("\\.svelte\\'" . web-mode))
-;; (setq web-mode-engines-alist
-;;     '(("svelte" . "\\.svelte\\'")))
+(add-to-list 'auto-mode-alist '("\\.svelte\\'" . web-mode))
+(setq web-mode-engines-alist
+    '(("svelte" . "\\.svelte\\'")))
 
-;; (use-package ccls)
-
-;; (use-package solidity-mode)
+(use-package ccls)
 
 (use-package lsp-pyright
   :hook (python-mode . (lambda ()
@@ -471,8 +469,8 @@
   "Enable Corfu in the minibuffer if `completion-at-point' is bound."
   (when (where-is-internal #'completion-at-point (list (current-local-map)))
     (setq-local corfu-auto t) ;; Enable/disable auto completion
-    (setq-local corfu-echo-delay nil ;; Disable automatic echo and popup
-                corfu-popupinfo-delay nil)
+    (setq-local corfu-echo-delay 0.0 ;; Disable automatic echo and popup
+                corfu-popupinfo-delay 0.0)
     (corfu-mode 1)))
 
 (add-hook 'minibuffer-setup-hook #'corfu-enable-in-minibuffer)
@@ -681,7 +679,7 @@
     '((sequence "TODO(t)" "PROJ(p)" "ACTIVE(a)" "REVIEW(r)" "START(s)" "NEXT(N)" "WORKING(w)" "HOLD(h)" "|" "DONE(d)" "KILL(k)")
         (sequence "|" "OKAY(o)" "YES(y)" "NO(n)")))
 
-;; (setq org-agenda-files '("~/Documents/Denote/Todo/"))
+(setq org-agenda-files '("~/Documents/Denote/Todo/"))
 (setq org-agenda-window-setup 'current-window
     org-agenda-span 14
     org-agenda-start-day "-3d"
@@ -690,7 +688,7 @@
 (use-package denote
     :straight (denote :type git :host github :repo "protesilaos/denote")
     :config
-    ;; (setq denote-directory "~/Documents/Denote")
+    (setq denote-directory "~/Documents/Denote")
     (setq denote-known-keywords '())
     (setq denote-infer-keywords t)
     (setq denote-sort-keywords t)
@@ -800,9 +798,9 @@
     :states '(normal motion)
     "p" '(projectile-command-map :whick-key "projects"))
 
-  ;; (general-define-key
-  ;;   "M-S-x" 'execute-extended-command
-  ;;   "M-x" 'consult-mode-command)
+;; (general-define-key
+;;   "M-S-x" 'execute-extended-command
+;;   "M-x" 'consult-mode-command)
 
 (aadi/leader-keys
     :states '(normal motion)
@@ -866,8 +864,7 @@
 
 (aadi/leader-keys org-mode-map
     "m" '(:ignore t :which-key "org localleader")
-    ;; "a" 'my-denote-move-from-todo-to-archive
-)
+    "a" 'my-denote-move-from-todo-to-archive)
 (aadi/leader-local-keys org-mode-map
     "h" '(:ignore t :which-key "heading")
     "h h" 'consult-org-heading
