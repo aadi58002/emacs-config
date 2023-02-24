@@ -67,12 +67,44 @@
 
 (autoload #'+org/dwim-at-point (concat user-emacs-directory "autoload/+org"))
 
+;; (defun my-denote--add-todo-keyword ()
+;;    "Add the todo keyword to the new captured note if it is under the Todo Sub directory"
+;;     (let* ((file denote-last-path))
+;;         (if (string= (file-name-directory file) (file-name-as-directory denote-todo-directory))
+;;             (let* ((file-type (denote-filetype-heuristics file))
+;;                 (title (denote-retrieve-title-value file file-type))
+;;                 (keywords (denote-retrieve-keywords-value file file-type)))
+;;                 (denote-rename-file file title (append '("todo") keywords))))))
+
+;; (defun my-denote--add-todo-or-archive-keyword (file file-type)
+;;   "Replace todo with archive keyword (or vice versa) in FILE, given FILE-TYPE.
+;;   See `my-denote-move-from-todo-to-archive'."
+;;   (let* ((keywords (denote-retrieve-keywords-value file file-type)))
+;;     (cond
+;;      ((member "todo" keywords)
+;;       (setq keywords (delete "todo" keywords)
+;;             keywords (append '("archive") keywords)))
+;;      ((member "archive" keywords)
+;;       (setq keywords (delete "archive" keywords)
+;;             keywords (append '("todo") keywords)))
+;;      (t keywords))))
+
 ;; (defun my-denote-move-from-todo-to-archive ()
 ;;   (interactive)
-;;   (let* ((file buffer-file-name))
-;;     (if (denote-file-is-note-p file)(let* ((archive-target (string-replace "/Todo/" "/Archived/" file)))
-;;                                       (rename-file file archive-target)
-;;                                       (find-file archive-target))(message "The buffer file is not a denote file"))))
+;;   ;; Like the above example, but we pass values directly to
+;;   ;; `denote-rename-file' instead of doing it interactively.  More
+;;   ;; precisely, we re-use the existing title and keywords, while
+;;   ;; adding "todo" to the list of keywords.
+;;   (let* ((file (denote--rename-dired-file-or-prompt))
+;;          (file-type (denote-filetype-heuristics file)))
+;;     (denote-rename-file
+;;      file
+;;      (denote-retrieve-title-value file file-type)
+;;      (my-denote--add-todo-or-archive-keyword file file-type)))
+;;   (let* ((file (denote--rename-dired-file-or-prompt))
+;;          (archive-target (string-replace "/Todo/" "/Archived/" file)))
+;;     (rename-file file archive-target)
+;;     (denote-update-dired-buffers)))
 
 (defun random-element-of-list (items)
   (let* ((size (length items))
@@ -120,28 +152,70 @@
   (interactive)
   (start-process "kitty" nil "setsid" "kitty" "-d" default-directory))
 
-(defun brave-vscode-docs ()
-  (interactive)
-  (start-process "brave" nil "setsid" "brave" "--incognito" "https://code.visualstudio.com/api/language-extensions/language-server-extension-guide"))
+;; (defun brave-vscode-docs ()
+;;   (interactive)
+;;   (start-process "brave" nil "setsid" "brave" "--incognito" "https://code.visualstudio.com/api/language-extensions/language-server-extension-guide"))
 
-(defvar bootstrap-version)
-(let ((bootstrap-file
-         (expand-file-name "straight/repos/straight.el/bootstrap.el" user-emacs-directory))
-        (bootstrap-version 6))
-    (unless (file-exists-p bootstrap-file)
-      (with-current-buffer
-          (url-retrieve-synchronously
-           "https://raw.githubusercontent.com/radian-software/straight.el/develop/install.el"
-           'silent 'inhibit-cookies)
-        (goto-char (point-max))
-        (eval-print-last-sexp)))
-    (load bootstrap-file nil 'nomessage))
-(setq-default straight-vc-git-default-clone-depth '(1 single-branch))
-(setq straight-use-package-by-default t) 
-(straight-use-package 'use-package)
+(defvar elpaca-installer-version 0.2)
+(defvar elpaca-directory (expand-file-name "elpaca/" user-emacs-directory))
+(defvar elpaca-builds-directory (expand-file-name "builds/" elpaca-directory))
+(defvar elpaca-repos-directory (expand-file-name "repos/" elpaca-directory))
+(defvar elpaca-order '(elpaca :repo "https://github.com/progfolio/elpaca.git"
+                              :ref nil
+                              :files (:defaults (:exclude "extensions"))
+                              :build (:not elpaca--activate-package)))
+(when-let ((repo  (expand-file-name "elpaca/" elpaca-repos-directory))
+           (build (expand-file-name "elpaca/" elpaca-builds-directory))
+           (order (cdr elpaca-order))
+           ((add-to-list 'load-path (if (file-exists-p build) build repo)))
+           ((not (file-exists-p repo))))
+  (condition-case-unless-debug err
+      (if-let ((buffer (pop-to-buffer-same-window "*elpaca-installer*"))
+               ((zerop (call-process "git" nil buffer t "clone"
+                                     (plist-get order :repo) repo)))
+               (default-directory repo)
+               ((zerop (call-process "git" nil buffer t "checkout"
+                                     (or (plist-get order :ref) "--"))))
+               (emacs (concat invocation-directory invocation-name))
+               ((zerop (call-process emacs nil buffer nil "-Q" "-L" "." "--batch"
+                                     "--eval" "(byte-recompile-directory \".\" 0 'force)"))))
+          (progn (require 'elpaca)
+                 (elpaca-generate-autoloads "elpaca" repo)
+                 (kill-buffer buffer))
+        (error "%s" (with-current-buffer buffer (buffer-string))))
+    ((error) (warn "%s" err) (delete-directory repo 'recursive))))
+(require 'elpaca-autoloads)
+(add-hook 'after-init-hook #'elpaca-process-queues)
+(elpaca `(,@elpaca-order))
 
-(let ((straight-x-file (expand-file-name "straight/repos/straight.el/straight-x.el" user-emacs-directory)))
-  (if (file-exists-p straight-x-file) (load straight-x-file)))
+;; Install use-package support
+(elpaca elpaca-use-package
+  ;; Enable :elpaca use-package keyword.
+  (elpaca-use-package-mode)
+  ;; Assume :elpaca t unless otherwise specified.
+  (setq elpaca-use-package-by-default t))
+
+;; Block until current queue processed.
+(elpaca-wait)
+
+;; (defvar bootstrap-version)
+;; (let ((bootstrap-file
+;;          (expand-file-name "straight/repos/straight.el/bootstrap.el" user-emacs-directory))
+;;         (bootstrap-version 6))
+;;     (unless (file-exists-p bootstrap-file)
+;;       (with-current-buffer
+;;           (url-retrieve-synchronously
+;;            "https://raw.githubusercontent.com/radian-software/straight.el/develop/install.el"
+;;            'silent 'inhibit-cookies)
+;;         (goto-char (point-max))
+;;         (eval-print-last-sexp)))
+;;     (load bootstrap-file nil 'nomessage))
+;; (setq-default straight-vc-git-default-clone-depth '(1 single-branch))
+;; (setq straight-use-package-by-default t) 
+;; (straight-use-package 'use-package)
+
+;; (let ((straight-x-file (expand-file-name "straight/repos/straight.el/straight-x.el" user-emacs-directory)))
+;;   (if (file-exists-p straight-x-file) (load straight-x-file)))
 
 (eval-when-compile (setq evil-want-keybinding nil))
 
@@ -179,8 +253,6 @@
 (use-package pdf-tools
    :config
    (add-to-list 'auto-mode-alist '("\\.pdf\\'" . pdf-view-mode)))
-(use-package org-pdfview
-   :after org)
 
 (use-package tempel
   :init
@@ -228,7 +300,7 @@
 ;;   (emms-all)
 ;;   (setq emms-source-file-default-directory "~/Music/"
 ;;         emms-info-functions '(emms-info-native)
-;;         emms-player-list '(emms-player-mpv)
+;;         emms-player-list '(emms-player-vlc)
 ;;         emms-repeat-track t
 ;;         emms-mode-line-mode t
 ;;         emms-playlist-buffer-name "*Music*"
@@ -254,6 +326,7 @@
   (undohist-initialize))
 
 (use-package savehist
+  :elpaca nil
   :init
   (savehist-mode))
 
@@ -367,8 +440,6 @@
 
 ;; (use-package ccls)
 
-;; (use-package solidity-mode)
-
 (use-package lsp-pyright
   :hook (python-mode . (lambda ()
                           (require 'lsp-pyright)
@@ -389,6 +460,7 @@
           lsp-ui-doc-position 'bottom
           lsp-ui-peek-always-show t
           lsp-signature-auto-activate t
+          lsp-enable-snippet nil
           lsp-ui-doc-delay 0.0
           lsp-ui-sideline-show-diagnostics t 
           lsp-enable-symbol-highlighting t 
@@ -415,9 +487,9 @@
         (tree-sitter-require 'html)
         (tree-sitter-require 'cpp)
         (tree-sitter-require 'css)
-        (add-to-list 'tree-sitter-major-mode-language-alist '(typescript-ts-mode . tsx)))
-  (global-tree-sitter-mode)
-  (add-hook 'tree-sitter-after-on-hook #'tree-sitter-hl-mode)
+        (add-to-list 'tree-sitter-major-mode-language-alist '(typescript-ts-mode . tsx))
+        (global-tree-sitter-mode)
+        (add-hook 'tree-sitter-after-on-hook #'tree-sitter-hl-mode))
 
 (use-package magit
   :config
@@ -453,7 +525,7 @@
   :hook (prog-mode . rainbow-delimiters-mode))
 
 (use-package corfu
-  :straight (:files (:defaults "extensions/*"))
+  :elpaca (corfu :files (:defaults "extensions/*"))
   :init
   ;; Setup corfu for popup like completion
   (setq corfu-cycle t  ; Allows cycling through candidates
@@ -465,14 +537,15 @@
         corfu-quit-at-boundary 'insert)
   (corfu-history-mode 1)
   (global-corfu-mode 1)
-  (advice-add #'lsp-completion-at-point :around #'cape-wrap-noninterruptible))
+  (advice-add #'lsp-completion-at-point :around #'cape-wrap-noninterruptible)
+  (define-key corfu-map "\M-m" #'corfu-move-to-minibuffer))
 
 (defun corfu-enable-in-minibuffer ()
   "Enable Corfu in the minibuffer if `completion-at-point' is bound."
   (when (where-is-internal #'completion-at-point (list (current-local-map)))
     (setq-local corfu-auto t) ;; Enable/disable auto completion
-    (setq-local corfu-echo-delay nil ;; Disable automatic echo and popup
-                corfu-popupinfo-delay nil)
+    (setq-local corfu-echo-delay 0.0 ;; Disable automatic echo and popup
+                corfu-popupinfo-delay 0.0)
     (corfu-mode 1)))
 
 (add-hook 'minibuffer-setup-hook #'corfu-enable-in-minibuffer)
@@ -482,9 +555,9 @@
   (let ((completion-extra-properties corfu--extra)
         completion-cycle-threshold completion-cycling)
     (apply #'consult-completion-in-region completion-in-region--data)))
-(define-key corfu-map "\M-m" #'corfu-move-to-minibuffer)
 
 (use-package emacs
+  :elpaca nil
   :init
   (defun crm-indicator (args)
     (cons (format "[CRM%s] %s"
@@ -506,30 +579,6 @@
     :init
     (add-to-list 'completion-at-point-functions #'cape-file)
     (add-to-list 'completion-at-point-functions #'cape-dabbrev))
-
-(defun +embark-live-vertico ()
-  "Shrink Vertico minibuffer when `embark-live' is active."
-  (when-let (win (and (string-prefix-p "*Embark Live" (buffer-name))
-                      (active-minibuffer-window)))
-    (with-selected-window win
-      (when (and (bound-and-true-p vertico--input)
-                 (fboundp 'vertico-multiform-unobtrusive))
-        (vertico-multiform-unobtrusive)))))
-
-(add-hook 'embark-collect-mode-hook #'+embark-live-vertico)
-(use-package vertico
-    :straight (:files (:defaults "extensions/*"))
-    :init
-    (setq vertico-count 20
-          vertico-resize nil
-          vertico-cycle t)
-    (vertico-mode))
-
-(use-package marginalia
-  :config
-  (marginalia-mode)
-  (setq marginalia-align 'center
-    marginalia-align-offset 20))
 
 (use-package embark
         :bind
@@ -590,11 +639,60 @@
     (advice-add #'embark-completing-read-prompter
                     :around #'embark-hide-which-key-indicator)
 
+(use-package vertico
+    :init
+    (setq vertico-count 20
+          vertico-resize nil
+          vertico-cycle t)
+    (vertico-mode))
+
+
+(defun +embark-live-vertico ()
+  "Shrink Vertico minibuffer when `embark-live' is active."
+  (when-let (win (and (string-prefix-p "*Embark Live" (buffer-name))
+                      (active-minibuffer-window)))
+    (with-selected-window win
+      (when (and (bound-and-true-p vertico--input)
+                 (fboundp 'vertico-multiform-unobtrusive))
+        (vertico-multiform-unobtrusive)))))
+
+(add-hook 'embark-collect-mode-hook #'+embark-live-vertico)
+
+(use-package marginalia
+  :config
+  (marginalia-mode)
+  (setq marginalia-align 'center
+    marginalia-align-offset 20))
+
 (use-package orderless
     :custom
     ;; (orderless-matching-styles '(orderless-literal orderless-regexp orderless-flex))
     (completion-styles '(orderless))
     (completion-category-overrides '((file (styles partial-completion)))))
+
+(defvar consult--fd-command nil)
+(defun consult--fd-builder (input)
+  (unless consult--fd-command
+    (setq consult--fd-command
+          (if (eq 0 (call-process-shell-command "fdfind"))
+              "fdfind"
+            "fd")))
+  (pcase-let* ((`(,arg . ,opts) (consult--command-split input))
+               (`(,re . ,hl) (funcall consult--regexp-compiler
+                                      arg 'extended t)))
+    (when re
+      (cons (append
+             (list consult--fd-command
+                   "--color=never" "--full-path"
+                   (consult--join-regexps re 'extended))
+             opts)
+            hl))))
+
+(defun consult-fd (&optional dir initial)
+  (interactive "P")
+  (let* ((prompt-dir (consult--directory-prompt "Fd" dir))
+         (default-directory (cdr prompt-dir)))
+    (find-file (consult--find (car prompt-dir) #'consult--fd-builder initial))))
 
 (use-package consult
   :hook (completion-list-mode . consult-preview-at-point-mode)
@@ -634,6 +732,12 @@
         (org-babel-do-load-languages 'org-babel-load-languages org-babel-load-languages))
         ad-do-it))
 
+(defun adi/org-setup()
+    (org-indent-mode +1)
+    (toc-org-mode +1))
+
+(add-hook 'org-mode-hook 'adi/org-setup)
+
 (use-package evil-org
     :config
     (evil-org-mode +1))
@@ -648,6 +752,7 @@
 (use-package org-modern
    :config
     (setq org-use-property-inheritance t ;;Might fix some bugs with org mode src block
+          org-startup-indented t
           org-confirm-babel-evaluate nil
           org-src-preserve-indentation t
           org-export-preserve-breaks t
@@ -687,52 +792,61 @@
     org-agenda-start-day "-3d"
     org-agenda-inhibit-startup t)
 
-(use-package denote
-    :straight (denote :type git :host github :repo "protesilaos/denote")
-    :config
-    ;; (setq denote-directory "~/Documents/Denote")
-    (setq denote-known-keywords '())
-    (setq denote-infer-keywords t)
-    (setq denote-sort-keywords t)
-    (setq denote-excluded-directories-regexp nil)
-    (setq denote-excluded-keywords-regexp nil)
-    (setq denote-date-prompt-use-org-read-date t)
-    (setq denote-backlinks-show-context t))
+;; (defvar denote-todo-directory)
+;; (use-package denote
+;;     :elpaca '(denote :host github :repo "protesilaos/denote")
+;;     :config
+;;     (setq denote-directory "~/Documents/Denote")
+;;     (setq denote-todo-directory (concat (denote-directory) "Todo"))
+;;     (setq denote-known-keywords '())
+;;     (setq denote-infer-keywords t)
+;;     (setq denote-sort-keywords t)
+;;     (setq denote-excluded-directories-regexp nil)
+;;     (setq denote-excluded-keywords-regexp nil)
+;;     (setq denote-date-prompt-use-org-read-date t)
+;;     (setq denote-backlinks-show-context t))
 
-(with-eval-after-load 'org-capture
-    (add-to-list 'org-capture-templates
-               '("n" "Notes" plain
-                (file denote-last-path)
-                (function
-                    (lambda ()
-                        (let ((denote-directory (file-name-as-directory (concat (denote-directory) "Notes"))))
-                            (denote-org-capture))))
-                :no-save t
-                :immediate-finish nil
-                :kill-buffer t
-                :jump-to-captured t))
-    (add-to-list 'org-capture-templates
-               '("r" "Resources" plain
-                (file denote-last-path)
-                (function
-                    (lambda ()
-                        (let ((denote-directory (file-name-as-directory (concat (denote-directory) "Resources"))))
-                            (denote-org-capture))))
-                :no-save t
-                :immediate-finish nil
-                :kill-buffer t
-                :jump-to-captured t))
-    (add-to-list 'org-capture-templates
-               '("t" "Todo" plain
-                (file denote-last-path)
-                (function
-                    (lambda ()
-                        (let ((denote-directory (file-name-as-directory (concat (denote-directory) "Todo"))))
-                            (denote-org-capture))))
-                :no-save t
-                :immediate-finish nil
-                :kill-buffer t
-                :jump-to-captured t)))
+;; (with-eval-after-load 'org-capture
+;;     (add-to-list 'org-capture-templates
+;;                '("n" "Notes" plain
+;;                 (file file)
+;;                 (function
+;;                     (lambda ()
+;;                         (let ((denote-directory (file-name-as-directory (concat (denote-directory) "Notes")))
+;;                               (denote-org-capture-specifiers "%l\n%i* Notes: %?"))
+;;                             (denote-org-capture)
+;;                 )))
+;;                 :no-save t
+;;                 :immediate-finish nil
+;;                 :kill-buffer t
+;;                 :jump-to-captured t))
+;;     (add-to-list 'org-capture-templates
+;;                '("r" "Resources" plain
+;;                 (file denote-last-path)
+;;                 (function
+;;                     (lambda ()
+;;                         (let ((denote-directory (file-name-as-directory (concat (denote-directory) "Resources")))
+;;                               (denote-org-capture-specifiers "%l\n%i\n* Resource for: %?"))
+;;                             (denote-org-capture))))
+;;                 :no-save t
+;;                 :immediate-finish nil
+;;                 :kill-buffer t
+;;                 :jump-to-captured t))
+;;     (add-to-list 'org-capture-templates
+;;                '("t" "Todo" plain
+;;                 (file denote-last-path)
+;;                 (function
+;;                     (lambda ()
+;;                         (let ((denote-directory (file-name-as-directory denote-todo-directory))
+;;                               (denote-org-capture-specifiers "%l\n%i\n* TODO %?"))
+;;                             (denote-org-capture))))
+;;                 :no-save t
+;;                 :immediate-finish nil
+;;                 :kill-buffer t
+;;                 :jump-to-captured t)))
+;; (add-hook 'org-capture-after-finalize-hook 'my-denote--add-todo-keyword)
+
+(elpaca-wait)
 
 (global-set-key (kbd "<escape>") 'keyboard-escape-quit)
 (global-set-key (kbd "C-;") 'embark-act)
@@ -781,7 +895,6 @@
     :states '(normal motion)
     "n" '(:ignore t :which-key "denote")
     "n c" 'denote-create-note-in-subdirectory
-    "n j" 'my-denote-journal
     "n n" 'denote
     "n N" 'denote-type
     "n d" 'denote-date
@@ -800,9 +913,9 @@
     :states '(normal motion)
     "p" '(projectile-command-map :whick-key "projects"))
 
-  ;; (general-define-key
-  ;;   "M-S-x" 'execute-extended-command
-  ;;   "M-x" 'consult-mode-command)
+;; (general-define-key
+;;   "M-S-x" 'execute-extended-command
+;;   "M-x" 'consult-mode-command)
 
 (aadi/leader-keys
     :states '(normal motion)
@@ -866,8 +979,7 @@
 
 (aadi/leader-keys org-mode-map
     "m" '(:ignore t :which-key "org localleader")
-    ;; "a" 'my-denote-move-from-todo-to-archive
-)
+    ;; "a" 'my-denote-move-from-todo-to-archive)
 (aadi/leader-local-keys org-mode-map
     "h" '(:ignore t :which-key "heading")
     "h h" 'consult-org-heading
