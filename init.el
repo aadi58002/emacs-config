@@ -978,7 +978,7 @@
     "z i" '(org-toggle-inline-images :whick-key "inline images"))
 
 (aadi/leader-keys org-mode-map
-    "m" '(:ignore t :which-key "org localleader")
+    "m" '(:ignore t :which-key "org localleader"))
     ;; "a" 'my-denote-move-from-todo-to-archive)
 (aadi/leader-local-keys org-mode-map
     "h" '(:ignore t :which-key "heading")
