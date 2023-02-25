@@ -199,6 +199,8 @@
   ;; Assume :elpaca t unless otherwise specified.
   (setq elpaca-use-package-by-default t))
 
+(if (fboundp 'elpaca-wait)(elpaca-wait))
+
 ;; (defvar bootstrap-version)
 ;; (let ((bootstrap-file
 ;;          (expand-file-name "straight/repos/straight.el/bootstrap.el" user-emacs-directory))
