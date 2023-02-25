@@ -29,8 +29,8 @@
       dired-recursive-deletes 'always)
 
 (setq delete-by-moving-to-trash t 
-      dired-listing-switches "-AGFhlv --group-directories-first --time-style=long-iso")
-(setq dired-dwim-target t
+      dired-listing-switches "-AGFhlv --group-directories-first --time-style=long-iso"
+      dired-dwim-target t
       dired-auto-revert-buffer #'dired-directory-changed-p
       dired-make-directory-clickable nil
       dired-free-space nil)
@@ -49,6 +49,7 @@
       dired-bind-info nil 
       delete-by-moving-to-trash t
       +vertico-consult-fd-args "fd -p --color=never -i --type f -E node_modules --regex")
+
 (electric-pair-mode 1)
 (set-fringe-mode 10)
 (set-face-attribute 'default nil :font "JetBrains Mono" :height 100)
@@ -60,10 +61,8 @@
       window-combination-resize t
       global-auto-revert-mode 1
       global-auto-revert-non-file-buffers t)
-(setq backup-directory-alist
-      `((".*" . ,temporary-file-directory)))
-(setq auto-save-file-name-transforms
-      `((".*" ,temporary-file-directory t)))
+(setq backup-directory-alist `((".*" . ,temporary-file-directory)))
+(setq auto-save-file-name-transforms `((".*" ,temporary-file-directory t)))
 
 (autoload #'+org/dwim-at-point (concat user-emacs-directory "autoload/+org"))
 
@@ -107,10 +106,12 @@
 ;;     (denote-update-dired-buffers)))
 
 (defun random-element-of-list (items)
+  ;; Selects a random element from a list
   (let* ((size (length items))
          (index (random size)))
     (nth index items)))
 
+<<<<<<< HEAD
 ;; (defun Competitive-coding-output-input-toggle ()
 ;;   (interactive)
 ;;   (delete-other-windows)
@@ -134,6 +135,35 @@
 ;;   (interactive)
 ;;   (write-region (current-kill 0) nil (concat default-directory "inputf.in") nil)
 ;;   (Competitive-coding-output-input-toggle))
+=======
+(defun Competitive-coding-output-input-toggle ()
+  ;; Open side buffer to show inputf.in and outputf.in files as input and output of code file with the `SPC m z` Keybinding in rust-mode
+
+  (interactive)
+  (delete-other-windows)
+  (kill-matching-buffers "*.in")
+  (evil-window-vsplit)
+  (find-file (expand-file-name "inputf.in" default-directory))
+  (evil-window-split)
+  (find-file (expand-file-name "outputf.in" default-directory))
+  (other-window 1)
+  (enlarge-window-horizontally 40))
+
+(defun rust-reset()
+  ;;Delete the entire buffer and expand a default template defined in `./templates` with the `SPC m r` Keybinding in rust-mode
+  (interactive)
+  (widen)
+  (erase-buffer)
+  (insert "chef")
+  (tempel-expand)
+  (narrow-to-defun))
+
+(defun code-input-refresh()
+  ;; Places the clipboard content in the inputf.in file with the `SPC m i` Keybinding in rust-mode
+  (interactive)
+  (write-region (current-kill 0) nil (concat default-directory "inputf.in") nil)
+  (Competitive-coding-output-input-toggle))
+>>>>>>> personal-config
 
 ;; source: http://steve.yegge.googlepages.com/my-dot-emacs-file
 ;; (defun copy-current-file (new-name)
@@ -195,9 +225,6 @@
   ;; Assume :elpaca t unless otherwise specified.
   (setq elpaca-use-package-by-default t))
 
-;; Block until current queue processed.
-(elpaca-wait)
-
 ;; (defvar bootstrap-version)
 ;; (let ((bootstrap-file
 ;;          (expand-file-name "straight/repos/straight.el/bootstrap.el" user-emacs-directory))
@@ -227,12 +254,12 @@
       :config
       (evil-mode 1))
 (setq evil-move-cursor-back nil
-    evil-want-fine-undo t
-    evil-move-beyond-eol t
-    evil-respect-visual-line-mode t
-    evil-org-retain-visual-state-on-shift t
-    evil-vsplit-window-right t
-    evil-split-window-below t)
+      evil-want-fine-undo t
+      evil-move-beyond-eol t
+      evil-respect-visual-line-mode t         ;; I don't know why this does not work and keep the visual selection after one indentation
+      evil-org-retain-visual-state-on-shift t
+      evil-vsplit-window-right t
+      evil-split-window-below t)
 
 (use-package general
   :config
@@ -294,6 +321,7 @@
   (global-prettify-symbols-mode)
   (global-ligature-mode t))
 
+<<<<<<< HEAD
 ;; (use-package emms
 ;;   :init
 ;;   (require 'emms-setup)
@@ -309,6 +337,23 @@
 ;;         emms-source-file-directory-tree-function 'emms-source-file-directory-tree-find)
 ;;   (emms-add-directory-tree "~/Music/")
 ;;   (emms-add-directory-tree "~/Videos/Test Video"))
+=======
+(use-package emms
+  :init
+  (require 'emms-setup)
+  (emms-all)
+  (setq emms-source-file-default-directory "~/Music/"
+        emms-info-functions '(emms-info-native)
+        emms-player-list '(emms-player-mpv)
+        emms-repeat-track t
+        emms-mode-line-mode t
+        emms-playlist-buffer-name "*Music*"
+        emms-playing-time-mode t
+        emms-info-asynchronously t
+        emms-source-file-directory-tree-function 'emms-source-file-directory-tree-find)
+  (emms-add-directory-tree "~/Music/")
+  (emms-add-directory-tree "~/Videos/Test Video"))
+>>>>>>> personal-config
 
 (use-package helpful)
 
@@ -534,46 +579,11 @@
         corfu-auto-delay 0.0  ; No delay for completion
         corfu-popupinfo-delay 0.0  ; No delay for completion
         corfu-echo-documentation nil  ; Echo docs for current completion option
+        corfu-quit-no-match 'separator
         corfu-quit-at-boundary 'insert)
   (corfu-history-mode 1)
   (global-corfu-mode 1)
-  (advice-add #'lsp-completion-at-point :around #'cape-wrap-noninterruptible)
-  (define-key corfu-map "\M-m" #'corfu-move-to-minibuffer))
-
-(defun corfu-enable-in-minibuffer ()
-  "Enable Corfu in the minibuffer if `completion-at-point' is bound."
-  (when (where-is-internal #'completion-at-point (list (current-local-map)))
-    (setq-local corfu-auto t) ;; Enable/disable auto completion
-    (setq-local corfu-echo-delay 0.0 ;; Disable automatic echo and popup
-                corfu-popupinfo-delay 0.0)
-    (corfu-mode 1)))
-
-(add-hook 'minibuffer-setup-hook #'corfu-enable-in-minibuffer)
-
-(defun corfu-move-to-minibuffer ()
-  (interactive)
-  (let ((completion-extra-properties corfu--extra)
-        completion-cycle-threshold completion-cycling)
-    (apply #'consult-completion-in-region completion-in-region--data)))
-
-(use-package emacs
-  :elpaca nil
-  :init
-  (defun crm-indicator (args)
-    (cons (format "[CRM%s] %s"
-                  (replace-regexp-in-string
-                   "\\`\\[.*?]\\*\\|\\[.*?]\\*\\'" ""
-                   crm-separator)
-                  (car args))
-          (cdr args)))
-    (advice-add #'completing-read-multiple :filter-args #'crm-indicator)
-
-    (setq minibuffer-prompt-properties
-            '(read-only t cursor-intangible t face minibuffer-prompt))
-    (add-hook 'minibuffer-setup-hook #'cursor-intangible-mode)
-    (setq enable-recursive-minibuffers t
-          completion-cycle-threshold 3
-          tab-always-indent 'complete))
+  (advice-add #'lsp-completion-at-point :around #'cape-wrap-noninterruptible))
 
 (use-package cape
     :init
@@ -658,6 +668,25 @@
 
 (add-hook 'embark-collect-mode-hook #'+embark-live-vertico)
 
+(use-package emacs
+  :elpaca nil
+  :init
+  (defun crm-indicator (args)
+    (cons (format "[CRM%s] %s"
+                  (replace-regexp-in-string
+                   "\\`\\[.*?]\\*\\|\\[.*?]\\*\\'" ""
+                   crm-separator)
+                  (car args))
+          (cdr args)))
+    (advice-add #'completing-read-multiple :filter-args #'crm-indicator)
+
+    (setq minibuffer-prompt-properties
+            '(read-only t cursor-intangible t face minibuffer-prompt))
+    (add-hook 'minibuffer-setup-hook #'cursor-intangible-mode)
+    (setq enable-recursive-minibuffers t
+          completion-cycle-threshold 3
+          tab-always-indent 'complete))
+
 (use-package marginalia
   :config
   (marginalia-mode)
@@ -737,10 +766,6 @@
     (toc-org-mode +1))
 
 (add-hook 'org-mode-hook 'adi/org-setup)
-
-(use-package evil-org
-    :config
-    (evil-org-mode +1))
 
 (use-package org-cliplink)
 
@@ -846,14 +871,8 @@
 ;;                 :jump-to-captured t)))
 ;; (add-hook 'org-capture-after-finalize-hook 'my-denote--add-todo-keyword)
 
-(elpaca-wait)
+(if (fboundp 'elpaca-wait)(elpaca-wait))
 
-(global-set-key (kbd "<escape>") 'keyboard-escape-quit)
-(global-set-key (kbd "C-;") 'embark-act)
-(general-define-key
-    :keymaps 'evil-window-map
-    "C-w" 'ace-window)
-(keymap-set minibuffer-mode-map "C-S-v" 'evil-paste-after)
 (general-create-definer aadi/leader-keys
     :states '(normal visual emacs)
     :keymaps 'override
@@ -862,6 +881,13 @@
     :states '(normal visual emacs)
     :keymaps 'override
     :prefix "SPC m")
+
+(global-set-key (kbd "<escape>") 'keyboard-escape-quit)
+(global-set-key (kbd "C-;") 'embark-act)
+(general-define-key
+    :keymaps 'evil-window-map
+    "C-w" 'ace-window)
+(keymap-set minibuffer-mode-map "C-S-v" 'evil-paste-after)
 (aadi/leader-keys
     "SPC" 'find-file
     "RET" 'denote-open-or-create)
