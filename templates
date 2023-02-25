@@ -18,7 +18,6 @@ org-mode ;; Available Org-mode
           "[^[:word:]0-9]+"
           )) " " )
 ) n "#+description: " (p "description") n "#+latex_header_extra: \hypersetup{colorlinks=true,linkcolor=blue}" n "#+author: Aditya Yadav" n n "* " (p "heading") n q)
-(blog (p "Test: " test "No Insert") n (p test))
 
 c++-mode ;; Available c++-mode
 

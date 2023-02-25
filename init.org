@@ -323,6 +323,8 @@ It is in actively developing emacs package manager but it is not widely document
   (elpaca-use-package-mode)
   ;; Assume :elpaca t unless otherwise specified.
   (setq elpaca-use-package-by-default t))
+
+(if (fboundp 'elpaca-wait)(elpaca-wait))
 #+end_src
 ** Straight
 Straight.el if elpaca is too buggy for you. ( just replace all the :elpaca in package definations with :straight )
