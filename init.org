@@ -808,6 +808,7 @@ Best git client (start with `SPC g g`)
 #+begin_src emacs-lisp
 (use-package magit
   :config
+  (add-hook 'git-commit-post-finish-hook 'magit)
   (setq magit-display-buffer-function #'magit-display-buffer-fullframe-status-v1))
 #+end_src
 *** Git gutter
@@ -860,7 +861,7 @@ Give word completion in text file and code completions from lsp in programming f
 It has some performace issues with corfu you can use company-mode and company-box but i like corfu better as it is closer to native emacs
 #+begin_src emacs-lisp
 (use-package corfu
-  :elpaca (corfu :files (:defaults "extensions/*"))
+  :elpaca (corfu :host github :repo "minad/corfu" :files (:defaults "extensions/*"))
   :init
   ;; Setup corfu for popup like completion
   (setq corfu-cycle t  ; Allows cycling through candidates

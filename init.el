@@ -66,6 +66,49 @@
 
 (autoload #'+org/dwim-at-point (concat user-emacs-directory "autoload/+org"))
 
+(defun adi--sudo-file-path (file)
+  (let ((host (or (file-remote-p file 'host) "localhost")))
+    (concat "/" (when (file-remote-p file)
+                  (concat (file-remote-p file 'method) ":"
+                          (if-let (user (file-remote-p file 'user))
+                              (concat user "@" host)
+                            host)
+                          "|"))
+            "sudo:root@" host
+            ":" (or (file-remote-p file 'localname)
+                    file))))
+
+(defun adi/sudo-find-file (file)
+  "Open FILE as root."
+  (interactive "FOpen file as root: ")
+  (find-file (adi--sudo-file-path file)))
+
+(defun adi/sudo-this-file ()
+  "Open the current file as root."
+  (interactive)
+  (find-file
+   (adi--sudo-file-path
+    (or buffer-file-name
+        (when (or (derived-mode-p 'dired-mode)
+                  (derived-mode-p 'wdired-mode))
+          default-directory)))))
+
+(defun adi/sudo-save-buffer ()
+  "Save this file as root."
+  (interactive)
+  (let ((file (adi--sudo-file-path buffer-file-name)))
+    (if-let (buffer (find-file-noselect file))
+        (let ((origin (current-buffer)))
+          (copy-to-buffer buffer (point-min) (point-max))
+          (unwind-protect
+              (with-current-buffer buffer
+                (save-buffer))
+            (unless (eq origin buffer)
+              (kill-buffer buffer))
+            (with-current-buffer origin
+              (revert-buffer t t))))
+      (user-error "Unable to open %S" file))))
+
 (defun my-denote--add-todo-keyword ()
    "Add the todo keyword to the new captured note if it is under the Todo Sub directory"
     (let* ((file denote-last-path))
@@ -496,6 +539,7 @@
 
 (use-package magit
   :config
+  (add-hook 'git-commit-post-finish-hook 'magit)
   (setq magit-display-buffer-function #'magit-display-buffer-fullframe-status-v1))
 
 (use-package git-gutter-fringe
@@ -528,7 +572,7 @@
   :hook (prog-mode . rainbow-delimiters-mode))
 
 (use-package corfu
-  :elpaca (corfu :files (:defaults "extensions/*"))
+  :elpaca (corfu :host github :repo "minad/corfu" :files (:defaults "extensions/*"))
   :init
   ;; Setup corfu for popup like completion
   (setq corfu-cycle t  ; Allows cycling through candidates
@@ -653,7 +697,7 @@
 
 (use-package orderless
     :custom
-    ;; (orderless-matching-styles '(orderless-literal orderless-regexp orderless-flex))
+    (orderless-matching-styles '(orderless-literal orderless-regexp orderless-flex))
     (completion-styles '(orderless))
     (completion-category-overrides '((file (styles partial-completion)))))
 
