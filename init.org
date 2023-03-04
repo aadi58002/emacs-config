@@ -1,7 +1,7 @@
 #+TITLE: Config of Emacs
 #+DESCRIPTION: This is the org mode version of my config of emacs
 #+FILETAGS: Config
-#+PROPERTY: header-args :tangle ~/.config/emacs/init.el
+#+PROPERTY: header-args :tangle ~/.config/emacs/init.el :lexical t
 
 * Table of Content :toc:noexport:
 - [[#early-initel][Early-init.el]]
@@ -78,7 +78,10 @@ Stopping Some modules which i don't use from being loaded like menu-bar-mode,too
 ;; larger than the system default.
 (setq frame-inhibit-implied-resize t
       frame-resize-pixelwise t)
+
 (setq package-enable-at-startup nil)
+
+(setq native-comp-async-report-warnings-errors nil)
 
 (setq use-dialog-box t ; only for mouse events, which I seldom use
       use-file-dialog nil
@@ -86,6 +89,34 @@ Stopping Some modules which i don't use from being loaded like menu-bar-mode,too
       inhibit-startup-screen t
       inhibit-startup-echo-area-message user-login-name ; read the docstring
       inhibit-startup-buffer-menu t)
+
+;; Debugging
+(setq debug-on-error t)
+
+;; Reduce startup time due to file-handler matching
+(defvar default-file-name-handler-alist file-name-handler-alist)
+(setq file-name-handler-alist nil)
+
+;; Set a few post-run handlers
+(defun +gc-after-focus-change ()
+  "Run GC when frame loses focus."
+  (run-with-idle-timer
+   5 nil
+   (lambda () (unless (frame-focus-state) (garbage-collect)))))
+
+(defun +reset-init-values ()
+  (run-with-idle-timer
+   1 nil
+   (lambda ()
+     (setq file-name-handler-alist default-file-name-handler-alist
+           gc-cons-percentage 0.1
+           gc-cons-threshold (* 100 1024 1024))
+     (message "Set gc-cons-threshold = 100M & file-name-handler-alist restored")
+     (when (boundp 'after-focus-change-function)
+       (add-function :after after-focus-change-function #'+gc-after-focus-change)))))
+
+(with-eval-after-load 'elpaca
+  (add-hook 'elpaca-after-init-hook '+reset-init-values))
 
 (provide 'early-init)
 ;;; early-init.el ends here
@@ -145,13 +176,14 @@ Setting some default which suit well for me as well as enabling some performance
       delete-by-moving-to-trash t
       +vertico-consult-fd-args "fd -p --color=never -i --type f -E node_modules --regex")
 
+(put 'narrow-to-region 'disabled nil)
+
 (electric-pair-mode 1)
 (set-fringe-mode 10)
 (set-face-attribute 'default nil :font "JetBrains Mono" :height 100)
 (setq auto-save-default t
       truncate-string-ellipsis "<>"
-      which-key-idle-delay 0.5
-      evil-snipe-scope 'whole-visible)
+      which-key-idle-delay 0.5)
 (setq x-stretch-cursor t
       window-combination-resize t
       global-auto-revert-mode 1
@@ -362,6 +394,10 @@ It is in actively developing emacs package manager but it is not widely document
 (add-hook 'after-init-hook #'elpaca-process-queues)
 (elpaca `(,@elpaca-order))
 
+(with-eval-after-load 'evil
+  (with-eval-after-load 'elpaca-ui (evil-make-intercept-map elpaca-ui-mode-map))
+  (with-eval-after-load 'elpaca-info (evil-make-intercept-map elpaca-info-mode-map)))
+
 ;; Install use-package support
 (elpaca elpaca-use-package
   ;; Enable :elpaca use-package keyword.
@@ -400,6 +436,28 @@ The use straight-merge-all to apply the pulled changed on packages.
 #+end_src
 * Packages
 ** Keybindings
+*** Undo fu
+A package which integrates into emacs keep undo history
+#+begin_src emacs-lisp
+(use-package undo-fu)
+#+end_src
+*** Undo hist
+Package which keep file history between emacs sessions.Like after killing all emacs process and restarting emacs
+#+begin_src emacs-lisp
+(use-package undohist
+  :init
+  (setq undo-tree-history-directory-alist '(((concat user-emacs-directory "/undohist"))))
+  :config
+  (undohist-initialize))
+#+end_src
+*** Savehist
+Package which save command history and such which are not related to files
+#+begin_src emacs-lisp
+(use-package savehist
+  :elpaca nil
+  :init
+  (savehist-mode))
+#+end_src
 *** Evil
 Emacs keybindings are OK but i am a vimmer
 #+begin_src emacs-lisp
@@ -407,9 +465,9 @@ Emacs keybindings are OK but i am a vimmer
 
 (use-package evil
       :init
-        (setq evil-want-integration t) ;; This is optional since it's already set to t by default.
-        (setq evil-want-keybinding nil)
-        (setq evil-undo-system 'undo-fu)
+      (setq evil-want-integration t) ;; This is optional since it's already set to t by default.
+      (setq evil-want-keybinding nil)
+      (setq evil-undo-system 'undo-fu)
       :config
       (evil-mode 1))
 (setq evil-move-cursor-back nil
@@ -425,6 +483,8 @@ I don't want to write define-key multile times also it allows me to set keybindi
 #+begin_src emacs-lisp
 (use-package general
   :config
+  (general-override-mode)
+  (general-auto-unbind-keys)
   (general-evil-setup t))
 #+end_src
 *** Evil Collection
@@ -463,6 +523,12 @@ Tempel is a less mature tempel templatin system then yasnippet but i like it tem
   :init
   (global-tempel-abbrev-mode))
 #+end_src
+*** Anzu
+#+begin_src emacs-lisp
+(use-package anzu
+  :defer 10
+  :config (global-anzu-mode))
+#+end_src
 *** Tempel Collection
 I don't have to write commonly available snippets by hand
 #+begin_src emacs-lisp
@@ -494,7 +560,8 @@ Like in this case it is bound to three actions. `add-hook`
 *** Vimish fold
 Code folding is nice but i am not satisfied with this extension
 #+begin_src emacs-lisp
-(use-package vimish-fold)
+(use-package ts-fold
+  :elpaca (ts-fold :type git :host github :repo "emacs-tree-sitter/ts-fold"))
 #+end_src
 *** Ligatures
 I like pretty symbols and it makes it easier to read code with more describable symbols
@@ -546,28 +613,6 @@ Quickly jump to any chracter in the visible buffer area `area you can see on scr
      :config
      (setq avy-background t)
      (avy-setup-default))
-#+end_src
-*** Undo fu
-A package which integrates into emacs keep undo history
-#+begin_src emacs-lisp
-(use-package undo-fu)
-#+end_src
-*** Undo hist
-Package which keep file history between emacs sessions.Like after killing all emacs process and restarting emacs
-#+begin_src emacs-lisp
-(use-package undohist
-  :init
-  (setq undo-tree-history-directory-alist '(((concat user-emacs-directory "/undohist"))))
-  :config
-  (undohist-initialize))
-#+end_src
-*** Savehist
-Package which save command history and such which are not related to files
-#+begin_src emacs-lisp
-(use-package savehist
-  :elpaca nil
-  :init
-  (savehist-mode))
 #+end_src
 ** UI
 *** Dashboard
@@ -751,7 +796,7 @@ Error checking and live update on them during writing code
 (use-package flycheck
   :init (global-flycheck-mode))
 #+end_src
-*** Format all
+*** Format
 Don't manually put spaces and tabs in code there are programs to do it automatically now.
 #+begin_src emacs-lisp
 (use-package format-all
@@ -786,22 +831,15 @@ Give lsp mode super powers and give us more information
           lsp-ui-sideline-actions-icon lsp-ui-sideline-actions-icon-default))
 #+end_src
 *** Tree sitter
-A better syntax highter for programming languages
 #+begin_src emacs-lisp
-  (use-package tree-sitter-langs
-        :after tree-sitter
-        :config
-        (tree-sitter-require 'tsx)
-        (tree-sitter-require 'typescript)
-        (tree-sitter-require 'rust)
-        (tree-sitter-require 'javascript)
-        (tree-sitter-require 'python)
-        (tree-sitter-require 'html)
-        (tree-sitter-require 'cpp)
-        (tree-sitter-require 'css)
-        (add-to-list 'tree-sitter-major-mode-language-alist '(typescript-ts-mode . tsx))
-        (global-tree-sitter-mode)
-        (add-hook 'tree-sitter-after-on-hook #'tree-sitter-hl-mode))
+(use-package treesit
+  :elpaca nil
+  :config
+  (treesit-major-mode-setup))
+
+(use-package treesit-auto
+  :config
+  (global-treesit-auto-mode))
 #+end_src
 *** Magit
 Best git client (start with `SPC g g`)
@@ -866,9 +904,9 @@ It has some performace issues with corfu you can use company-mode and company-bo
   ;; Setup corfu for popup like completion
   (setq corfu-cycle t  ; Allows cycling through candidates
         corfu-auto t   ; Enable auto completion
-        corfu-auto-prefix 1  ; Complete with less prefix keys
-        corfu-auto-delay 0.0  ; No delay for completion
-        corfu-popupinfo-delay 0.0  ; No delay for completion
+        corfu-auto-prefix 0  ; Complete with less prefix keys
+        corfu-auto-delay 1.0  ; No delay for completion
+        corfu-popupinfo-delay 0.5  ; No delay for completion
         corfu-echo-documentation nil  ; Echo docs for current completion option
         corfu-quit-no-match 'separator
         corfu-quit-at-boundary 'insert)
@@ -1219,12 +1257,10 @@ Remove this block with you are using straight.el
 ** Leader key definer definations
 #+begin_src emacs-lisp
 (general-create-definer aadi/leader-keys
-    :states '(normal visual emacs)
-    :keymaps 'override
+    :states '(normal hybrid motion visual operator emacs)
     :prefix "SPC")
 (general-create-definer aadi/leader-local-keys
     :states '(normal visual emacs)
-    :keymaps 'override
     :prefix "SPC m")
 #+end_src
 ** General good defaults
@@ -1358,7 +1394,8 @@ Remove this block with you are using straight.el
 #+begin_src emacs-lisp
 (general-define-key
     :states '(normal motion)
-    ";" '(avy-goto-char :which-key "avy goto char"))
+    "g w" '(avy-goto-word-0 :which-key "avy goto word")
+    "g c" '(avy-goto-char :which-key "avy goto char"))
 #+end_src
 ** Buffer Map
 #+begin_src emacs-lisp
@@ -1417,10 +1454,10 @@ Remove this block with you are using straight.el
 (general-define-key
     :states '(normal emacs visual)
     "z" '(:ignore t :which-key "fold")
-    "z c" 'vimish-fold-toggle
-    "z a" 'vimish-fold-avy
-    "z f" 'vimish-fold-refold-all
-    "z u" 'vimish-fold-unfold-all)
+    "z z" 'ts-fold-toggle
+    "z r" 'ts-fold-open-recursively
+    "z c" 'ts-fold-close-all
+    "z o" 'ts-fold-open-all)
 #+end_src
 ** Helpful
 #+begin_src emacs-lisp

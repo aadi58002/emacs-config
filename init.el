@@ -50,13 +50,14 @@
       delete-by-moving-to-trash t
       +vertico-consult-fd-args "fd -p --color=never -i --type f -E node_modules --regex")
 
+(put 'narrow-to-region 'disabled nil)
+
 (electric-pair-mode 1)
 (set-fringe-mode 10)
 (set-face-attribute 'default nil :font "JetBrains Mono" :height 100)
 (setq auto-save-default t
       truncate-string-ellipsis "<>"
-      which-key-idle-delay 0.5
-      evil-snipe-scope 'whole-visible)
+      which-key-idle-delay 0.5)
 (setq x-stretch-cursor t
       window-combination-resize t
       global-auto-revert-mode 1
@@ -235,6 +236,10 @@
 (add-hook 'after-init-hook #'elpaca-process-queues)
 (elpaca `(,@elpaca-order))
 
+(with-eval-after-load 'evil
+  (with-eval-after-load 'elpaca-ui (evil-make-intercept-map elpaca-ui-mode-map))
+  (with-eval-after-load 'elpaca-info (evil-make-intercept-map elpaca-info-mode-map)))
+
 ;; Install use-package support
 (elpaca elpaca-use-package
   ;; Enable :elpaca use-package keyword.
@@ -263,13 +268,26 @@
 ;; (let ((straight-x-file (expand-file-name "straight/repos/straight.el/straight-x.el" user-emacs-directory)))
 ;;   (if (file-exists-p straight-x-file) (load straight-x-file)))
 
+(use-package undo-fu)
+
+(use-package undohist
+  :init
+  (setq undo-tree-history-directory-alist '(((concat user-emacs-directory "/undohist"))))
+  :config
+  (undohist-initialize))
+
+(use-package savehist
+  :elpaca nil
+  :init
+  (savehist-mode))
+
 (eval-when-compile (setq evil-want-keybinding nil))
 
 (use-package evil
       :init
-        (setq evil-want-integration t) ;; This is optional since it's already set to t by default.
-        (setq evil-want-keybinding nil)
-        (setq evil-undo-system 'undo-fu)
+      (setq evil-want-integration t) ;; This is optional since it's already set to t by default.
+      (setq evil-want-keybinding nil)
+      (setq evil-undo-system 'undo-fu)
       :config
       (evil-mode 1))
 (setq evil-move-cursor-back nil
@@ -282,6 +300,8 @@
 
 (use-package general
   :config
+  (general-override-mode)
+  (general-auto-unbind-keys)
   (general-evil-setup t))
 
 (use-package evil-collection
@@ -304,6 +324,10 @@
   :init
   (global-tempel-abbrev-mode))
 
+(use-package anzu
+  :defer 10
+  :config (global-anzu-mode))
+
 (use-package tempel-collection)
 
 (use-package ace-window
@@ -322,7 +346,8 @@
    (add-hook 'consult-after-jump-hook #'pulsar-reveal-entry)
    (pulsar-global-mode 1))
 
-(use-package vimish-fold)
+(use-package ts-fold
+  :elpaca (ts-fold :type git :host github :repo "emacs-tree-sitter/ts-fold"))
 
 (use-package ligature
   :config
@@ -362,19 +387,6 @@
      :config
      (setq avy-background t)
      (avy-setup-default))
-
-(use-package undo-fu)
-
-(use-package undohist
-  :init
-  (setq undo-tree-history-directory-alist '(((concat user-emacs-directory "/undohist"))))
-  :config
-  (undohist-initialize))
-
-(use-package savehist
-  :elpaca nil
-  :init
-  (savehist-mode))
 
 (setq banner-icons-list (file-expand-wildcards (concat user-emacs-directory "icons/*")))
 (use-package dashboard
@@ -522,20 +534,14 @@
           lsp-completion-show-kind t 
           lsp-ui-sideline-actions-icon lsp-ui-sideline-actions-icon-default))
 
-  (use-package tree-sitter-langs
-        :after tree-sitter
-        :config
-        (tree-sitter-require 'tsx)
-        (tree-sitter-require 'typescript)
-        (tree-sitter-require 'rust)
-        (tree-sitter-require 'javascript)
-        (tree-sitter-require 'python)
-        (tree-sitter-require 'html)
-        (tree-sitter-require 'cpp)
-        (tree-sitter-require 'css)
-        (add-to-list 'tree-sitter-major-mode-language-alist '(typescript-ts-mode . tsx))
-        (global-tree-sitter-mode)
-        (add-hook 'tree-sitter-after-on-hook #'tree-sitter-hl-mode))
+(use-package treesit
+  :elpaca nil
+  :config
+  (treesit-major-mode-setup))
+
+(use-package treesit-auto
+  :config
+  (global-treesit-auto-mode))
 
 (use-package magit
   :config
@@ -577,9 +583,9 @@
   ;; Setup corfu for popup like completion
   (setq corfu-cycle t  ; Allows cycling through candidates
         corfu-auto t   ; Enable auto completion
-        corfu-auto-prefix 1  ; Complete with less prefix keys
-        corfu-auto-delay 0.0  ; No delay for completion
-        corfu-popupinfo-delay 0.0  ; No delay for completion
+        corfu-auto-prefix 0  ; Complete with less prefix keys
+        corfu-auto-delay 1.0  ; No delay for completion
+        corfu-popupinfo-delay 0.5  ; No delay for completion
         corfu-echo-documentation nil  ; Echo docs for current completion option
         corfu-quit-no-match 'separator
         corfu-quit-at-boundary 'insert)
@@ -876,12 +882,10 @@
 (if (fboundp 'elpaca-wait)(elpaca-wait))
 
 (general-create-definer aadi/leader-keys
-    :states '(normal visual emacs)
-    :keymaps 'override
+    :states '(normal hybrid motion visual operator emacs)
     :prefix "SPC")
 (general-create-definer aadi/leader-local-keys
     :states '(normal visual emacs)
-    :keymaps 'override
     :prefix "SPC m")
 
 (global-set-key (kbd "<escape>") 'keyboard-escape-quit)
@@ -984,7 +988,8 @@
 
 (general-define-key
     :states '(normal motion)
-    ";" '(avy-goto-char :which-key "avy goto char"))
+    "g w" '(avy-goto-word-0 :which-key "avy goto word")
+    "g c" '(avy-goto-char :which-key "avy goto char"))
 
 (aadi/leader-keys
     :states '(normal motion)
@@ -1033,10 +1038,10 @@
 (general-define-key
     :states '(normal emacs visual)
     "z" '(:ignore t :which-key "fold")
-    "z c" 'vimish-fold-toggle
-    "z a" 'vimish-fold-avy
-    "z f" 'vimish-fold-refold-all
-    "z u" 'vimish-fold-unfold-all)
+    "z z" 'ts-fold-toggle
+    "z r" 'ts-fold-open-recursively
+    "z c" 'ts-fold-close-all
+    "z o" 'ts-fold-open-all)
 
 (general-define-key
    :prefix "C-h"
