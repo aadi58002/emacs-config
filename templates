@@ -17,7 +17,7 @@ org-mode ;; Available Org-mode
                                        "\\1 \\2" (file-name-base(file-name-base buffer-file-name)))))
           "[^[:word:]0-9]+"
           )) " " )
-) n "#+description: " (p "description") n "#+latex_header_extra: \hypersetup{colorlinks=true,linkcolor=blue}" n "#+author: Aditya Yadav" n n "* " (p "heading") n q)
+) n "#+description: " (p "description") n "#+latex_header_extra: \\hypersetup{colorlinks=true,linkcolor=blue}" n "#+author: Aditya Yadav" n n "* " (p "heading") n q)
 
 c++-mode ;; Available c++-mode
 

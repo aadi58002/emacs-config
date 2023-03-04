@@ -66,6 +66,49 @@
 
 (autoload #'+org/dwim-at-point (concat user-emacs-directory "autoload/+org"))
 
+(defun adi--sudo-file-path (file)
+  (let ((host (or (file-remote-p file 'host) "localhost")))
+    (concat "/" (when (file-remote-p file)
+                  (concat (file-remote-p file 'method) ":"
+                          (if-let (user (file-remote-p file 'user))
+                              (concat user "@" host)
+                            host)
+                          "|"))
+            "sudo:root@" host
+            ":" (or (file-remote-p file 'localname)
+                    file))))
+
+(defun adi/sudo-find-file (file)
+  "Open FILE as root."
+  (interactive "FOpen file as root: ")
+  (find-file (adi--sudo-file-path file)))
+
+(defun adi/sudo-this-file ()
+  "Open the current file as root."
+  (interactive)
+  (find-file
+   (adi--sudo-file-path
+    (or buffer-file-name
+        (when (or (derived-mode-p 'dired-mode)
+                  (derived-mode-p 'wdired-mode))
+          default-directory)))))
+
+(defun adi/sudo-save-buffer ()
+  "Save this file as root."
+  (interactive)
+  (let ((file (adi--sudo-file-path buffer-file-name)))
+    (if-let (buffer (find-file-noselect file))
+        (let ((origin (current-buffer)))
+          (copy-to-buffer buffer (point-min) (point-max))
+          (unwind-protect
+              (with-current-buffer buffer
+                (save-buffer))
+            (unless (eq origin buffer)
+              (kill-buffer buffer))
+            (with-current-buffer origin
+              (revert-buffer t t))))
+      (user-error "Unable to open %S" file))))
+
 ;; (defun my-denote--add-todo-keyword ()
 ;;    "Add the todo keyword to the new captured note if it is under the Todo Sub directory"
 ;;     (let* ((file denote-last-path))
@@ -111,8 +154,9 @@
          (index (random size)))
     (nth index items)))
 
-<<<<<<< HEAD
 ;; (defun Competitive-coding-output-input-toggle ()
+;;   ;; Open side buffer to show inputf.in and outputf.in files as input and output of code file with the `SPC m z` Keybinding in rust-mode
+
 ;;   (interactive)
 ;;   (delete-other-windows)
 ;;   (kill-matching-buffers "*.in")
@@ -124,6 +168,7 @@
 ;;   (enlarge-window-horizontally 40))
 
 ;; (defun rust-reset()
+;;   ;;Delete the entire buffer and expand a default template defined in `./templates` with the `SPC m r` Keybinding in rust-mode
 ;;   (interactive)
 ;;   (widen)
 ;;   (erase-buffer)
@@ -132,38 +177,10 @@
 ;;   (narrow-to-defun))
 
 ;; (defun code-input-refresh()
+;;   ;; Places the clipboard content in the inputf.in file with the `SPC m i` Keybinding in rust-mode
 ;;   (interactive)
 ;;   (write-region (current-kill 0) nil (concat default-directory "inputf.in") nil)
 ;;   (Competitive-coding-output-input-toggle))
-=======
-(defun Competitive-coding-output-input-toggle ()
-  ;; Open side buffer to show inputf.in and outputf.in files as input and output of code file with the `SPC m z` Keybinding in rust-mode
-
-  (interactive)
-  (delete-other-windows)
-  (kill-matching-buffers "*.in")
-  (evil-window-vsplit)
-  (find-file (expand-file-name "inputf.in" default-directory))
-  (evil-window-split)
-  (find-file (expand-file-name "outputf.in" default-directory))
-  (other-window 1)
-  (enlarge-window-horizontally 40))
-
-(defun rust-reset()
-  ;;Delete the entire buffer and expand a default template defined in `./templates` with the `SPC m r` Keybinding in rust-mode
-  (interactive)
-  (widen)
-  (erase-buffer)
-  (insert "chef")
-  (tempel-expand)
-  (narrow-to-defun))
-
-(defun code-input-refresh()
-  ;; Places the clipboard content in the inputf.in file with the `SPC m i` Keybinding in rust-mode
-  (interactive)
-  (write-region (current-kill 0) nil (concat default-directory "inputf.in") nil)
-  (Competitive-coding-output-input-toggle))
->>>>>>> personal-config
 
 ;; source: http://steve.yegge.googlepages.com/my-dot-emacs-file
 ;; (defun copy-current-file (new-name)
@@ -225,11 +242,8 @@
   ;; Assume :elpaca t unless otherwise specified.
   (setq elpaca-use-package-by-default t))
 
-<<<<<<< HEAD
-=======
 (if (fboundp 'elpaca-wait)(elpaca-wait))
 
->>>>>>> personal-config
 ;; (defvar bootstrap-version)
 ;; (let ((bootstrap-file
 ;;          (expand-file-name "straight/repos/straight.el/bootstrap.el" user-emacs-directory))
@@ -326,7 +340,6 @@
   (global-prettify-symbols-mode)
   (global-ligature-mode t))
 
-<<<<<<< HEAD
 ;; (use-package emms
 ;;   :init
 ;;   (require 'emms-setup)
@@ -342,23 +355,6 @@
 ;;         emms-source-file-directory-tree-function 'emms-source-file-directory-tree-find)
 ;;   (emms-add-directory-tree "~/Music/")
 ;;   (emms-add-directory-tree "~/Videos/Test Video"))
-=======
-(use-package emms
-  :init
-  (require 'emms-setup)
-  (emms-all)
-  (setq emms-source-file-default-directory "~/Music/"
-        emms-info-functions '(emms-info-native)
-        emms-player-list '(emms-player-mpv)
-        emms-repeat-track t
-        emms-mode-line-mode t
-        emms-playlist-buffer-name "*Music*"
-        emms-playing-time-mode t
-        emms-info-asynchronously t
-        emms-source-file-directory-tree-function 'emms-source-file-directory-tree-find)
-  (emms-add-directory-tree "~/Music/")
-  (emms-add-directory-tree "~/Videos/Test Video"))
->>>>>>> personal-config
 
 (use-package helpful)
 
@@ -543,6 +539,7 @@
 
 (use-package magit
   :config
+  (add-hook 'git-commit-post-finish-hook 'magit)
   (setq magit-display-buffer-function #'magit-display-buffer-fullframe-status-v1))
 
 (use-package git-gutter-fringe
@@ -575,7 +572,7 @@
   :hook (prog-mode . rainbow-delimiters-mode))
 
 (use-package corfu
-  :elpaca (corfu :files (:defaults "extensions/*"))
+  :elpaca (corfu :host github :repo "minad/corfu" :files (:defaults "extensions/*"))
   :init
   ;; Setup corfu for popup like completion
   (setq corfu-cycle t  ; Allows cycling through candidates
@@ -700,7 +697,7 @@
 
 (use-package orderless
     :custom
-    ;; (orderless-matching-styles '(orderless-literal orderless-regexp orderless-flex))
+    (orderless-matching-styles '(orderless-literal orderless-regexp orderless-flex))
     (completion-styles '(orderless))
     (completion-category-overrides '((file (styles partial-completion)))))
 
