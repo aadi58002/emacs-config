@@ -28,7 +28,7 @@
 ;; Give the frame basic coloring while waiting for the theme to load. The main
 ;; purpose of this is to not blind me when it's dark by flashing a screen full
 ;; of white. These colors are from doom-one.
-(set-face-attribute 'default nil :background "#282c34" :foreground "#bbc2cf")
+;; (set-face-attribute 'default nil :background "#282c34" :foreground "#bbc2cf")
 ;; Default frame settings. This is actually maximized, not full screen.
 (push '(fullscreen . maximized) initial-frame-alist)
 (push '(ns-transparent-titlebar . t) default-frame-alist)
@@ -38,7 +38,10 @@
 ;; larger than the system default.
 (setq frame-inhibit-implied-resize t
       frame-resize-pixelwise t)
+
 (setq package-enable-at-startup nil)
+
+(setq native-comp-async-report-warnings-errors nil)
 
 (setq use-dialog-box t ; only for mouse events, which I seldom use
       use-file-dialog nil
@@ -46,6 +49,34 @@
       inhibit-startup-screen t
       inhibit-startup-echo-area-message user-login-name ; read the docstring
       inhibit-startup-buffer-menu t)
+
+;; Debugging
+(setq debug-on-error t)
+
+;; Reduce startup time due to file-handler matching
+(defvar default-file-name-handler-alist file-name-handler-alist)
+(setq file-name-handler-alist nil)
+
+;; Set a few post-run handlers
+(defun +gc-after-focus-change ()
+  "Run GC when frame loses focus."
+  (run-with-idle-timer
+   5 nil
+   (lambda () (unless (frame-focus-state) (garbage-collect)))))
+
+(defun +reset-init-values ()
+  (run-with-idle-timer
+   1 nil
+   (lambda ()
+     (setq file-name-handler-alist default-file-name-handler-alist
+           gc-cons-percentage 0.1
+           gc-cons-threshold (* 100 1024 1024))
+     (message "Set gc-cons-threshold = 100M & file-name-handler-alist restored")
+     (when (boundp 'after-focus-change-function)
+       (add-function :after after-focus-change-function #'+gc-after-focus-change)))))
+
+(with-eval-after-load 'elpaca
+  (add-hook 'elpaca-after-init-hook '+reset-init-values))
 
 (provide 'early-init)
 ;;; early-init.el ends here
