@@ -28,7 +28,7 @@
 ;; Give the frame basic coloring while waiting for the theme to load. The main
 ;; purpose of this is to not blind me when it's dark by flashing a screen full
 ;; of white. These colors are from doom-one.
-(set-face-attribute 'default nil :background "#282c34" :foreground "#bbc2cf")
+;; (set-face-attribute 'default nil :background "#282c34" :foreground "#bbc2cf")
 ;; Default frame settings. This is actually maximized, not full screen.
 (push '(fullscreen . maximized) initial-frame-alist)
 (push '(ns-transparent-titlebar . t) default-frame-alist)

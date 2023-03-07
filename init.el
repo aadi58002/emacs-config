@@ -1,6 +1,5 @@
 ;;; init.el -*- lexical-binding: t; -*-
 (defvar native-comp-deferred-compilation-deny-list nil)      ;;Native comp variable change in emacs 30
-(setenv "LSP_USE_PLISTS" "1")                                ;;Use a faster implmentation for list for lsp mode
 (setq create-lockfiles nil                                   ;;Don't want #..# files everywhere
       make-backup-files nil)                                 ;;Don't want Redundant copy of files
 (setq recentf-max-menu-items 25)                             ;;Recent files opened list size
@@ -25,10 +24,10 @@
 (load custom-file 'noerror 'nomessage)
 
 (setq electric-pair-preserve-balance t)
-(setq dired-recursive-copies 'always 
+(setq dired-recursive-copies 'always
       dired-recursive-deletes 'always)
 
-(setq delete-by-moving-to-trash t 
+(setq delete-by-moving-to-trash t
       dired-listing-switches "-AGFhlv --group-directories-first --time-style=long-iso"
       dired-dwim-target t
       dired-auto-revert-buffer #'dired-directory-changed-p
@@ -38,15 +37,15 @@
 (setq resize-mini-windows t)
 
 (add-hook 'dired-mode-hook #'hl-line-mode)
-(setq dired-isearch-filenames 'dwim 
-      dired-create-destination-dirs 'ask 
-      dired-vc-rename-file t 
+(setq dired-isearch-filenames 'dwim
+      dired-create-destination-dirs 'ask
+      dired-vc-rename-file t
       dired-do-revert-buffer (lambda (dir  (not (file-remote-p dir ))) )
-      dired-clean-up-buffers-too t 
-      dired-clean-confirm-killing-deleted-buffers t 
+      dired-clean-up-buffers-too t
+      dired-clean-confirm-killing-deleted-buffers t
       dired-x-hands-off-my-keys t     ; easier to show the keys I use
-      dired-bind-man nil 
-      dired-bind-info nil 
+      dired-bind-man nil
+      dired-bind-info nil
       delete-by-moving-to-trash t
       +vertico-consult-fd-args "fd -p --color=never -i --type f -E node_modules --regex")
 
@@ -54,7 +53,6 @@
 
 (electric-pair-mode 1)
 (set-fringe-mode 10)
-(set-face-attribute 'default nil :font "JetBrains Mono" :height 100)
 (setq auto-save-default t
       truncate-string-ellipsis "<>"
       which-key-idle-delay 0.5)
@@ -66,6 +64,15 @@
 (setq auto-save-file-name-transforms `((".*" ,temporary-file-directory t)))
 
 (autoload #'+org/dwim-at-point (concat user-emacs-directory "autoload/+org"))
+
+(setq-default show-trailing-whitespace t)
+(add-hook 'prog-mode-hook
+          (lambda () (font-lock-add-keywords nil '(("\\s-+$" 0 'trailing-whitespace)))))
+
+(defun my/backward-kill-word ()
+  "Kill backward to the beginning of the current word, but do not cross lines."
+  (interactive)
+   (if (not (looking-back "^\\s-*")) (backward-kill-word 1) (delete-horizontal-space)))
 
 (defun adi--sudo-file-path (file)
   (let ((host (or (file-remote-p file 'host) "localhost")))
@@ -200,10 +207,6 @@
   (interactive)
   (start-process "kitty" nil "setsid" "kitty" "-d" default-directory))
 
-(defun brave-vscode-docs ()
-  (interactive)
-  (start-process "brave" nil "setsid" "brave" "--incognito" "https://code.visualstudio.com/api/language-extensions/language-server-extension-guide"))
-
 (defvar elpaca-installer-version 0.2)
 (defvar elpaca-directory (expand-file-name "elpaca/" user-emacs-directory))
 (defvar elpaca-builds-directory (expand-file-name "builds/" elpaca-directory))
@@ -236,10 +239,6 @@
 (add-hook 'after-init-hook #'elpaca-process-queues)
 (elpaca `(,@elpaca-order))
 
-(with-eval-after-load 'evil
-  (with-eval-after-load 'elpaca-ui (evil-make-intercept-map elpaca-ui-mode-map))
-  (with-eval-after-load 'elpaca-info (evil-make-intercept-map elpaca-info-mode-map)))
-
 ;; Install use-package support
 (elpaca elpaca-use-package
   ;; Enable :elpaca use-package keyword.
@@ -262,7 +261,7 @@
 ;;         (eval-print-last-sexp)))
 ;;     (load bootstrap-file nil 'nomessage))
 ;; (setq-default straight-vc-git-default-clone-depth '(1 single-branch))
-;; (setq straight-use-package-by-default t) 
+;; (setq straight-use-package-by-default t)
 ;; (straight-use-package 'use-package)
 
 ;; (let ((straight-x-file (expand-file-name "straight/repos/straight.el/straight-x.el" user-emacs-directory)))
@@ -281,8 +280,6 @@
   :init
   (savehist-mode))
 
-(eval-when-compile (setq evil-want-keybinding nil))
-
 (use-package evil
       :init
       (setq evil-want-integration t) ;; This is optional since it's already set to t by default.
@@ -297,6 +294,9 @@
       evil-org-retain-visual-state-on-shift t
       evil-vsplit-window-right t
       evil-split-window-below t)
+(with-eval-after-load 'evil
+  (with-eval-after-load 'elpaca-ui (evil-make-intercept-map elpaca-ui-mode-map))
+  (with-eval-after-load 'elpaca-info (evil-make-intercept-map elpaca-info-mode-map)))
 
 (use-package general
   :config
@@ -309,65 +309,21 @@
     :config
     (evil-collection-init))
 
-(use-package docker
-   :config
-   (setq tramp-docker-program "podman"
-         docker-command "podman"
-         docker-composee-command "podman-compose"
-         tramp-docker-method "podman"))
-
 (use-package pdf-tools
    :config
    (add-to-list 'auto-mode-alist '("\\.pdf\\'" . pdf-view-mode)))
 
 (use-package tempel
-  :init
+  :config
   (global-tempel-abbrev-mode))
 
-(use-package anzu
-  :defer 10
-  :config (global-anzu-mode))
-
 (use-package tempel-collection)
-
-(use-package ace-window
-    :config
-    (setq aw-keys '(?a ?s ?d ?f ?g ?h ?j ?k ?l)))
-
-(use-package pulsar
-   :config
-   (setq pulsar-pulse t 
-         pulsar-delay 0.055 
-         pulsar-iterations 10 
-         pulsar-face 'pulsar-magenta
-         pulsar-highlight-face 'pulsar-yellow)
-   (add-hook 'next-error-hook #'pulsar-pulse-line)
-   (add-hook 'consult-after-jump-hook #'pulsar-recenter-top)
-   (add-hook 'consult-after-jump-hook #'pulsar-reveal-entry)
-   (pulsar-global-mode 1))
 
 (use-package ts-fold
   :elpaca (ts-fold :type git :host github :repo "emacs-tree-sitter/ts-fold"))
 
-(use-package ligature
-  :config
-  (ligature-set-ligatures 'prog-mode '("-|" "-~" "---" "-<<" "-<" "--" "->" "->>" "-->" "///" "/=" "/=="
-                                      "/>" "//" "/*" "*>" "***" "*/" "<-" "<<-" "<=>" "<=" "<|" "<||"
-                                      "<|||" "<|>" "<:" "<>" "<-<" "<<<" "<==" "<<=" "<=<" "<==>" "<-|"
-                                      "<<" "<~>" "<=|" "<~~" "<~" "<$>" "<$" "<+>" "<+" "</>" "</" "<*"
-                                      "<*>" "<->" "<!--" ":>" ":<" ":::" "::" ":?" ":?>" ":=" "::=" "=>>"
-                                      "==>" "=/=" "=!=" "=>" "===" "=:=" "==" "!==" "!!" "!=" ">]" ">:"
-                                      ">>-" ">>=" ">=>" ">>>" ">-" ">=" "&&&" "&&" "|||>" "||>" "|>" "|]"
-                                      "|}" "|=>" "|->" "|=" "||-" "|-" "||=" "||" ".." ".?" ".=" ".-" "..<"
-                                      "..." "+++" "+>" "++" "[||]" "[<" "[|" "{|" "??" "?." "?=" "?:" "##"
-                                      "###" "####" "#[" "#{" "#=" "#!" "#:" "#_(" "#_" "#?" "#(" ";;" "_|_"
-                                      "__" "~~" "~~>" "~>" "~-" "~@" "$>" "^=" "]#"))
-  (global-prettify-symbols-mode)
-  (global-ligature-mode t))
-
 (use-package emms
-  :init
-  (require 'emms-setup)
+  :config
   (emms-all)
   (setq emms-source-file-default-directory "~/Music/"
         emms-info-functions '(emms-info-native)
@@ -384,9 +340,34 @@
 (use-package helpful)
 
 (use-package avy
-     :config
-     (setq avy-background t)
-     (avy-setup-default))
+  :config
+  (setq avy-linum-mode t)
+  (setq avy-background t)
+  (custom-set-faces
+   `(avy-lead-face ((t (:background ,(face-background 'default) :foreground ,(face-attribute 'ansi-color-bright-red :foreground) :weight bold))))
+   `(avy-lead-face-0 ((t (:background ,(face-background 'default) :foreground ,(face-attribute 'ansi-color-bright-cyan :foreground)))))
+   `(avy-lead-face-1 ((t (:background ,(face-background 'default) :foreground ,(face-attribute 'ansi-color-bright-green :foreground)))))
+   `(avy-lead-face-2 ((t (:background ,(face-background 'default) :foreground ,(face-attribute 'ansi-color-bright-yellow :foreground))))))
+  (setq avy-style 'words))
+
+(use-package unicode-fonts)
+
+(use-package fontaine
+  :config
+  (setq fontaine-presets
+        '((regular
+           :default-height 100)
+          (medium
+           :default-weight semilight
+           :default-height 140)
+          (large
+           :default-weight semilight
+           :default-height 180
+           :bold-weight extrabold)
+          (t ; our shared fallback properties
+           :default-family "CaskaydiaCove Nerd Font Mono"
+           :default-weight normal)))
+  (fontaine-set-preset 'regular))
 
 (setq banner-icons-list (file-expand-wildcards (concat user-emacs-directory "icons/*")))
 (use-package dashboard
@@ -406,23 +387,28 @@
         (dashboard-setup-startup-hook))
 (add-hook 'server-after-make-frame-hook 'dashboard-refresh-buffer)
 
-(use-package which-key 
+(use-package which-key
   :init
   (which-key-mode))
 
 (use-package doom-themes
-    :config
-    (setq doom-themes-enable-bold t
-          doom-themes-enable-italic t)
-    (doom-themes-visual-bell-config)
-    (load-theme 'doom-dracula t)
-    (custom-set-faces
-        '(doom-themes-visual-bell (( t(:background "#00FFFF"))))
-        '(emms-playlist-selected-face (( t(:foreground "royal blue"))))
-        '(emms-playlist-track-face (( t(:foreground "#5da3e7"))))
-        '(emms-playlist-selected-face (( t(:foreground "royal blue"))))
-        '(emms-playlist-track-face (( t(:foreground "#5da3e7"))))
-        '(org-ellipsis (( t(:foreground "#C678DD"))))))
+  :config
+  (setq doom-themes-enable-bold t
+        doom-themes-enable-italic t)
+  (doom-themes-visual-bell-config)
+
+  (load-theme 'doom-dracula t)
+  (add-hook 'server-after-make-frame-functions
+              (lambda (frame)
+              (with-selected-frame frame
+                  (load-theme 'doom-dracula t))))
+  (custom-set-faces
+    '(doom-themes-visual-bell ((t (:background "#00FFFF"))))
+    '(emms-playlist-selected-face ((t (:foreground "royal blue"))))
+    '(emms-playlist-track-face ((t (:foreground "#5da3e7"))))
+    '(emms-playlist-selected-face ((t (:foreground "royal blue"))))
+    '(emms-playlist-track-face ((t (:foreground "#5da3e7"))))
+    '(org-ellipsis (( t(:foreground "#C678DD"))))))
 
 ;; (use-package modus-themes
 ;;    :config
@@ -458,31 +444,37 @@
   :config
   (add-hook 'dired-mode-hook 'all-the-icons-dired-mode))
 
-(use-package unicode-fonts)
-
-(use-package emojify)
-
 (use-package evil-nerd-commenter)
 
-(use-package lsp-mode
-  :custom
-  (lsp-completion-provider :none)
-  :init
-  (setq lsp-log-io nil)
-  (defun my/lsp-mode-setup-completion ()
-    (setf (alist-get 'styles (alist-get 'lsp-capf completion-category-defaults))
-          '(flex))) ;; Configure flex
-  :hook
-  (lsp-completion-mode . my/lsp-mode-setup-completion)
-  (prog-mode . lsp-mode)
-  (web-mode . lsp-mode))
-
+;; Best programming language so we need to include it
 (use-package rustic
   :config
-  (setq lsp-rust-analyzer-display-chaining-hints t
-        lsp-rust-analyzer-expand-macro t
-        lsp-rust-analyzer-display-parameter-hints t
-        lsp-rust-analyzer-server-display-inlay-hints t))
+  (setq rustic-lsp-client 'eglot))
+
+(use-package eldoc-box
+  :config
+  (setq eldoc-echo-area-use-multiline-p nil))
+
+(use-package eglot
+  :after (eldoc-box)
+  :hook ((prog-mode . eglot-ensure))
+  :config
+  (setq completion-category-overrides '((eglot (styles orderless))))
+  (setq eldoc-idle-delay 0.0
+        eglot-events-buffer-size 0
+        flymake-no-changes-timeout 0.5
+        eglot-autoshutdown t)
+  (add-hook 'eglot-managed-mode-hook #'eldoc-box-hover-mode t)
+  (add-hook 'eglot-managed-mode-hook
+            (lambda ()
+              "Make sure Eldoc will show us all of the feedback at point."
+              (setq-local eldoc-documentation-strategy
+                          #'eldoc-documentation-compose)))
+  (add-to-list 'eglot-ignored-server-capabilities :hoverProvider)
+  (add-to-list 'eglot-server-programs '(svelte-mode . ("svelteserver" "--stdio")))
+  (add-to-list 'eglot-server-programs `((c-mode c-ts-mode c++-mode c++-ts-mode)
+                                        . ,(eglot-alternatives
+                                            '("ccls" "clangd")))))
 
 (use-package typescript-mode)
 
@@ -493,55 +485,18 @@
     :commands web-mode)
 
 (add-to-list 'auto-mode-alist '("\\.svelte\\'" . web-mode))
-(setq web-mode-engines-alist
-    '(("svelte" . "\\.svelte\\'")))
+(setq web-mode-engines-alist '(("svelte" . "\\.svelte\\'")))
 
-(use-package ccls)
-
-(use-package lsp-pyright
-  :hook (python-mode . (lambda ()
-                          (require 'lsp-pyright)
-                          (lsp))))
-
-(use-package flycheck
-  :init (global-flycheck-mode))
-
-(use-package format-all
-   :config
-   (add-hook 'prog-mode-hook 'format-all-mode)
-   (add-hook 'format-all-mode-hook 'format-all-ensure-formatter))
-
-  (use-package lsp-ui
-    :hook (lsp-mode . lsp-ui-mode)
-    :config
-    (setq lsp-ui-peek-enable t
-          lsp-ui-doc-position 'bottom
-          lsp-ui-peek-always-show t
-          lsp-signature-auto-activate t
-          lsp-enable-snippet nil
-          lsp-ui-doc-delay 0.0
-          lsp-ui-sideline-show-diagnostics t 
-          lsp-enable-symbol-highlighting t 
-          lsp-ui-doc-enable t 
-          lsp-ui-doc-show-with-cursor t 
-          lsp-ui-doc-show-with-mouse t 
-          lsp-lens-enable t 
-          lsp-headerline-breadcrumb-enable t 
-          lsp-ui-sideline-show-diagnostics t 
-          lsp-modeline-code-actions-enable t 
-          lsp-eldoc-enable-hover t 
-          lsp-completion-show-detail t 
-          lsp-completion-show-kind t 
-          lsp-ui-sideline-actions-icon lsp-ui-sideline-actions-icon-default))
-
-(use-package treesit
-  :elpaca nil
+(use-package tree-sitter
   :config
-  (treesit-major-mode-setup))
+  (global-tree-sitter-mode))
 
-(use-package treesit-auto
+(use-package tree-sitter-langs
   :config
-  (global-treesit-auto-mode))
+  ;; This makes every node a link to a section of code
+  (setq tree-sitter-debug-jump-buttons t
+          ;; and this highlights the entire sub tree in your code
+          tree-sitter-debug-highlight-jump-region t))
 
 (use-package magit
   :config
@@ -578,20 +533,26 @@
   :hook (prog-mode . rainbow-delimiters-mode))
 
 (use-package corfu
-  :elpaca (corfu :host github :repo "minad/corfu" :files (:defaults "extensions/*"))
-  :init
+  :elpaca (corfu :host github :repo "minad/corfu" :files (:defaults "extensions/*.el"))
+  :config
   ;; Setup corfu for popup like completion
   (setq corfu-cycle t  ; Allows cycling through candidates
         corfu-auto t   ; Enable auto completion
         corfu-auto-prefix 0  ; Complete with less prefix keys
-        corfu-auto-delay 1.0  ; No delay for completion
-        corfu-popupinfo-delay 0.5  ; No delay for completion
-        corfu-echo-documentation nil  ; Echo docs for current completion option
+        corfu-auto-delay 0.0  ; No delay for completion
+        corfu-echo-documentation t ; Echo docs for current completion option
+        corfu-popupinfo-delay 0.0
         corfu-quit-no-match 'separator
         corfu-quit-at-boundary 'insert)
-  (corfu-history-mode 1)
+
+  ;; Silence the pcomplete capf, no errors or messages!
+  (advice-add 'pcomplete-completions-at-point :around #'cape-wrap-silent)
+
+  ;; Ensure that pcomplete does not write to the buffer
+  ;; and behaves as a pure `completion-at-point-function'.
+  (advice-add 'pcomplete-completions-at-point :around #'cape-wrap-purify)
   (global-corfu-mode 1)
-  (advice-add #'lsp-completion-at-point :around #'cape-wrap-noninterruptible))
+  (corfu-popupinfo-mode 1))
 
 (use-package cape
     :init
@@ -658,12 +619,12 @@
                     :around #'embark-hide-which-key-indicator)
 
 (use-package vertico
+    :elpaca (vertico :files (:defaults "extensions/*.el"))
     :init
     (setq vertico-count 20
           vertico-resize nil
           vertico-cycle t)
     (vertico-mode))
-
 
 (defun +embark-live-vertico ()
   "Shrink Vertico minibuffer when `embark-live' is active."
@@ -676,9 +637,12 @@
 
 (add-hook 'embark-collect-mode-hook #'+embark-live-vertico)
 
+;; A few more useful configurations...
 (use-package emacs
   :elpaca nil
   :init
+  ;; Add prompt indicator to `completing-read-multiple'.
+  ;; We display [CRM<separator>], e.g., [CRM,] if the separator is a comma.
   (defun crm-indicator (args)
     (cons (format "[CRM%s] %s"
                   (replace-regexp-in-string
@@ -703,7 +667,7 @@
 
 (use-package orderless
     :custom
-    (orderless-matching-styles '(orderless-literal orderless-regexp orderless-flex))
+    ;;(orderless-matching-styles '(orderless-literal orderless-regexp orderless-flex))
     (completion-styles '(orderless))
     (completion-category-overrides '((file (styles partial-completion)))))
 
@@ -758,8 +722,16 @@
   (setq consult-narrow-key "<")) ;; (kbd "C-+")
 
 (use-package embark-consult
-  :hook
-  (embark-collect-mode . consult-preview-at-point-mode))
+  :hook (embark-collect-mode . consult-preview-at-point-mode))
+
+;; Automatically paste a online link with the description set to the title of the page
+(use-package org-cliplink)
+
+;; Opening links at point
+(use-package link-hint)
+
+;; Don't want to create table of content manually in org mode
+(use-package toc-org)
 
 (defadvice org-babel-execute-src-block (around load-language nil activate)
     "Load language if needed"
@@ -769,18 +741,17 @@
         (org-babel-do-load-languages 'org-babel-load-languages org-babel-load-languages))
         ad-do-it))
 
+;; Life todo mangement with org mode and org agenda
+(setq org-log-done 'time)
+(setq org-todo-keywords
+    '((sequence "TODO(t)" "PROJ(p)" "ACTIVE(a)" "REVIEW(r)" "START(s)" "NEXT(N)" "WORKING(w)" "HOLD(h)" "|" "DONE(d)" "KILL(k)")
+        (sequence "|" "OKAY(o)" "YES(y)" "NO(n)")))
+
 (defun adi/org-setup()
     (org-indent-mode +1)
     (toc-org-mode +1))
 
 (add-hook 'org-mode-hook 'adi/org-setup)
-
-(use-package org-cliplink)
-
-(use-package link-hint)
-
-(use-package toc-org)  
-(add-hook 'org-mode-hook (lambda () (toc-org-mode 1)))
 
 (use-package org-modern
    :config
@@ -791,8 +762,7 @@
           org-export-preserve-breaks t
           org-log-into-drawer t
           org-link-file-path-type 'relative
-          org-agenda-start-on-weekday nil
-          ;; org-ellipsis "  "                                     ;;fun symbols   ,    , 
+          org-ellipsis "  "                                     ;;fun symbols   ,    , 
           org-enforce-todo-checkbox-dependencies t
           org-enforce-todo-dependencies t
           org-auto-align-tags nil
@@ -803,80 +773,76 @@
           org-insert-heading-respect-content t
           org-hide-emphasis-markers t
           org-pretty-entities t
-          org-ellipsis "…"
-          org-agenda-tags-column 0
-          org-agenda-block-separator ?─
-          org-agenda-time-grid
-          '((daily today require-timed)
-              (800 1000 1200 1400 1600 1800 2000)
-              " ┄┄┄┄┄ " "┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄")
-              org-agenda-current-time-string
-              "⭠ now ─────────────────────────────────────────────────")
+          org-ellipsis "…")
           (global-org-modern-mode))
-
-(setq org-log-done 'time)
-(setq org-todo-keywords
-    '((sequence "TODO(t)" "PROJ(p)" "ACTIVE(a)" "REVIEW(r)" "START(s)" "NEXT(N)" "WORKING(w)" "HOLD(h)" "|" "DONE(d)" "KILL(k)")
-        (sequence "|" "OKAY(o)" "YES(y)" "NO(n)")))
 
 (setq org-agenda-files '("~/Documents/Denote/Todo/"))
 (setq org-agenda-window-setup 'current-window
-    org-agenda-span 14
-    org-agenda-start-day "-3d"
-    org-agenda-inhibit-startup t)
+      org-agenda-tags-column 0
+      org-agenda-start-on-weekday nil
+      org-agenda-block-separator ?─
+      org-agenda-time-grid
+      '((daily today require-timed)
+        (800 1000 1200 1400 1600 1800 2000)
+        " ┄┄┄┄┄ " "┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄")
+      org-agenda-current-time-string
+      "⭠ now ─────────────────────────────────────────────────"
+      org-agenda-span 14
+      org-agenda-start-day "-3d"
+      org-agenda-inhibit-startup t)
 
 (defvar denote-todo-directory)
 (use-package denote
-    :elpaca '(denote :host github :repo "protesilaos/denote")
-    :config
-    (setq denote-directory "~/Documents/Denote")
-    (setq denote-todo-directory (concat (denote-directory) "Todo"))
-    (setq denote-known-keywords '())
-    (setq denote-infer-keywords t)
-    (setq denote-sort-keywords t)
-    (setq denote-excluded-directories-regexp nil)
-    (setq denote-excluded-keywords-regexp nil)
-    (setq denote-date-prompt-use-org-read-date t)
-    (setq denote-backlinks-show-context t))
+  :elpaca '(denote :host github :repo "protesilaos/denote")
+  :config
+  (setq denote-directory "~/Documents/Denote")
+  (setq denote-todo-directory (concat (denote-directory) "Todo"))
+  (setq denote-known-keywords '())
+  (setq denote-infer-keywords t)
+  (setq denote-sort-keywords t)
+  (setq denote-excluded-directories-regexp nil)
+  (setq denote-excluded-keywords-regexp nil)
+  (setq denote-date-prompt-use-org-read-date t)
+  (setq denote-backlinks-show-context t))
 
 (with-eval-after-load 'org-capture
-    (add-to-list 'org-capture-templates
+  (add-to-list 'org-capture-templates
                '("n" "Notes" plain
-                (file file)
-                (function
-                    (lambda ()
-                        (let ((denote-directory (file-name-as-directory (concat (denote-directory) "Notes")))
-                              (denote-org-capture-specifiers "%l\n%i* Notes: %?"))
-                            (denote-org-capture)
-                )))
-                :no-save t
-                :immediate-finish nil
-                :kill-buffer t
-                :jump-to-captured t))
-    (add-to-list 'org-capture-templates
+                 (file file)
+                 (function
+                  (lambda ()
+                    (let ((denote-directory (file-name-as-directory (concat (denote-directory) "Notes")))
+                          (denote-org-capture-specifiers "%l\n%i* Notes: %?"))
+                      (denote-org-capture)
+                      )))
+                 :no-save t
+                 :immediate-finish nil
+                 :kill-buffer t
+                 :jump-to-captured t))
+  (add-to-list 'org-capture-templates
                '("r" "Resources" plain
-                (file denote-last-path)
-                (function
-                    (lambda ()
-                        (let ((denote-directory (file-name-as-directory (concat (denote-directory) "Resources")))
-                              (denote-org-capture-specifiers "%l\n%i\n* Resource for: %?"))
-                            (denote-org-capture))))
-                :no-save t
-                :immediate-finish nil
-                :kill-buffer t
-                :jump-to-captured t))
-    (add-to-list 'org-capture-templates
+                 (file denote-last-path)
+                 (function
+                  (lambda ()
+                    (let ((denote-directory (file-name-as-directory (concat (denote-directory) "Resources")))
+                          (denote-org-capture-specifiers "%l\n%i\n* Resource for: %?"))
+                      (denote-org-capture))))
+                 :no-save t
+                 :immediate-finish nil
+                 :kill-buffer t
+                 :jump-to-captured t))
+  (add-to-list 'org-capture-templates
                '("t" "Todo" plain
-                (file denote-last-path)
-                (function
-                    (lambda ()
-                        (let ((denote-directory (file-name-as-directory denote-todo-directory))
-                              (denote-org-capture-specifiers "%l\n%i\n* TODO %?"))
-                            (denote-org-capture))))
-                :no-save t
-                :immediate-finish nil
-                :kill-buffer t
-                :jump-to-captured t)))
+                 (file denote-last-path)
+                 (function
+                  (lambda ()
+                    (let ((denote-directory (file-name-as-directory denote-todo-directory))
+                          (denote-org-capture-specifiers "%l\n%i\n* TODO %?"))
+                      (denote-org-capture))))
+                 :no-save t
+                 :immediate-finish nil
+                 :kill-buffer t
+                 :jump-to-captured t)))
 (add-hook 'org-capture-after-finalize-hook 'my-denote--add-todo-keyword)
 
 (if (fboundp 'elpaca-wait)(elpaca-wait))
@@ -890,21 +856,39 @@
 
 (global-set-key (kbd "<escape>") 'keyboard-escape-quit)
 (global-set-key (kbd "C-;") 'embark-act)
+
 (general-define-key
-    :keymaps 'evil-window-map
-    "C-w" 'ace-window)
-(keymap-set minibuffer-mode-map "C-S-v" 'evil-paste-after)
+ :keymaps 'vertico-map
+ "C-j" 'vertico-next
+ "C-k" 'vertico-previous)
+
+(general-define-key
+ :keymaps '(minibuffer-mode-map isearch-mode-map)
+ "C-S-v" 'evil-paste-after)
+
+(general-define-key
+ :states '(normal motion visual operator emacs)
+ :keymaps '(override local global)
+
+ "H" 'evil-beginning-of-line
+ "L" 'evil-end-of-line)
+
 (aadi/leader-keys
-    "SPC" 'find-file
-    "RET" 'denote-open-or-create)
+  "SPC" 'find-file
+  "RET" 'denote-open-or-create)
 (general-define-key
-    :states 'motion
-    "K" 'helpful-at-point
-    "M-/" 'evilnc-comment-or-uncomment-lines)
+ :states 'motion
+ "K" 'helpful-at-point
+ "S-/" '(consult-line :which-key "filter buffer")
+ "M-/" 'evilnc-comment-or-uncomment-lines)
 
 (general-define-key
   :states 'normal
   "," 'kitty-async-process)
+
+(general-define-key
+  :states 'insert
+  "<C-backspace>" 'my/backward-kill-word)
 
 (aadi/leader-keys
      "z" 'org-agenda)
@@ -943,7 +927,7 @@
 (aadi/leader-keys
     :keymaps 'projectile-mode-map
     :states '(normal motion)
-    "p" '(projectile-command-map :whick-key "projects"))
+    "p" '(:keymap projectile-command-map :whick-key "projects"))
 
 ;; (general-define-key
 ;;   "M-S-x" 'execute-extended-command
@@ -977,7 +961,6 @@
     :states '(normal motion)
     :prefix "g"
     "e" 'consult-compile-error
-    "f" 'consult-flycheck
     "l" 'consult-goto-line)
 
 (general-define-key
@@ -994,7 +977,6 @@
 (aadi/leader-keys
     :states '(normal motion)
     "b" '(:ignore t :which-key "buffer")
-    "b f" '(consult-line :which-key "filter buffer")
     "b b" 'consult-buffer
     "b B" 'bookmark-bmenu-list
     "b k" 'kill-this-buffer)
@@ -1019,14 +1001,6 @@
     "l" '(:ignore t :which-key "link")
     "l c" 'org-cliplink)
 
-(aadi/leader-keys lsp-mode-map
-    "m" '(:ignore t :which-key "lsp localleader"))
-(general-define-key
-    :keymaps 'lsp-mode-map
-    :states 'normal
-    "K" 'lsp-describe-thing-at-point
-    "C-c a" 'format-all-buffer)
-
 (aadi/leader-local-keys
     :keymaps 'rustic-mode-map
     "z" 'Competitive-coding-output-input-toggle
@@ -1045,16 +1019,29 @@
 
 (general-define-key
    :prefix "C-h"
-   "f" #'helpful-callable
-   "v" #'helpful-variable
-   "k" #'helpful-key
-   "F" #'helpful-function
-   "C" #'helpful-command)
+   "f" 'helpful-callable
+   "v" 'helpful-variable
+   "k" 'helpful-key
+   "F" 'helpful-function
+   "C" 'helpful-command)
 
 (general-define-key
    :states 'insert
    "C-s" 'tempel-complete)
 (general-define-key
+   :states '(insert normal)
    :keymaps 'tempel-map
    "S-TAB" 'tempel-previous
    "TAB" 'tempel-next)
+
+(aadi/leader-keys eglot-mode-map
+    "m" '(:ignore t :which-key "eglot localleader"))
+(aadi/leader-local-keys eglot-mode-map
+ "a" 'eglot-format)
+
+;; (use-package pcre
+;;   :elpaca (pcre :host github :repo "syohex/emacs-pcre"
+;;                 :pre-build ("make" "all")
+;;                 :files (:default "pcre.el" "pcre-core.so")))
+;; (use-package hop
+;;   :elpaca (hop :host github :repo "Animeshz/hop.el"))
