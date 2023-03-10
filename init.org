@@ -28,14 +28,13 @@
   - [[#denote-map][Denote Map]]
   - [[#project][Project]]
   - [[#consult-map][Consult Map]]
-  - [[#avy-map][Avy Map]]
+  - [[#hop-map][Hop Map]]
   - [[#buffer-map][Buffer Map]]
   - [[#org-map][Org Map]]
   - [[#fold][Fold]]
   - [[#helpful][Helpful]]
-  - [[#lsp-mode][Lsp mode]]
   - [[#tempel][Tempel]]
-- [[#test-package][Test package]]
+  - [[#eglot][Eglot]]
 
 * Early-init.el
 Stopping Some modules which i don't use from being loaded like menu-bar-mode,tool-bar-mode,scroll-bar-mode and package.el (build in emacs package manager).
@@ -436,19 +435,15 @@ The use straight-merge-all to apply the pulled changed on packages.
 #+end_src
 * Packages
 ** Keybindings
-*** Undo fu
+*** Undo Tree
 A package which integrates into emacs keep undo history
 #+begin_src emacs-lisp
-(use-package undo-fu)
-#+end_src
-*** Undo hist
-Package which keep file history between emacs sessions.Like after killing all emacs process and restarting emacs
-#+begin_src emacs-lisp
-(use-package undohist
-  :init
-  (setq undo-tree-history-directory-alist '(((concat user-emacs-directory "/undohist"))))
+(use-package undo-tree
   :config
-  (undohist-initialize))
+  (setq undo-tree-history-directory-alist '(("." . (concat user-emacs-directory "undotree")))
+        undo-tree-visualizer-diff t
+        undo-tree-auto-save-history t)
+  (global-undo-tree-mode))
 #+end_src
 *** Savehist
 Package which save command history and such which are not related to files
@@ -466,19 +461,20 @@ Emacs keybindings are OK but i am a vimmer
   :init
   (setq evil-want-integration t) ;; This is optional since it's already set to t by default.
   (setq evil-want-keybinding nil)
-  (setq evil-undo-system 'undo-fu)
+  (setq evil-undo-system 'undo-tree)
   :config
   (evil-mode 1))
-(setq evil-move-cursor-back nil
+  (setq evil-move-cursor-back nil
       evil-want-fine-undo t
       evil-move-beyond-eol t
       evil-respect-visual-line-mode t         ;; I don't know why this does not work and keep the visual selection after one indentation
       evil-org-retain-visual-state-on-shift t
+      evil-search-module 'evil-search
       evil-vsplit-window-right t
       evil-split-window-below t)
-(with-eval-after-load 'evil
-  (with-eval-after-load 'elpaca-ui (evil-make-intercept-map elpaca-ui-mode-map))
-  (with-eval-after-load 'elpaca-info (evil-make-intercept-map elpaca-info-mode-map)))
+  (with-eval-after-load 'evil
+    (with-eval-after-load 'elpaca-ui (evil-make-intercept-map elpaca-ui-mode-map))
+    (with-eval-after-load 'elpaca-info (evil-make-intercept-map elpaca-info-mode-map)))
 #+end_src
 *** General
 I don't want to write define-key multile times also it allows me to set keybindings in evil mode.
@@ -498,6 +494,11 @@ Evil mode for popular packages
   (evil-collection-init))
 #+end_src
 ** Generally helpful Package
+*** Tramp
+#+begin_src emacs-lisp
+(use-package tramp
+  :elpaca nil)
+#+end_src
 *** PDF tools
 It is useful in emacs as you can link to specific pdf pages in org mode with links like
 `[[pdfview:~/path/to/pdf::<pageNo>]]`
@@ -550,19 +551,16 @@ Better documentation of variable,function and alike in emacs
 #+begin_src emacs-lisp
 (use-package helpful)
 #+end_src
-*** Avy
+*** Hop
 Quickly jump to any chracter in the visible buffer area `area you can see on screen`
 #+begin_src emacs-lisp
-(use-package avy
-  :config
-  (setq avy-linum-mode t)
-  (setq avy-background t)
-  (custom-set-faces
-   `(avy-lead-face ((t (:background ,(face-background 'default) :foreground ,(face-attribute 'ansi-color-bright-red :foreground) :weight bold))))
-   `(avy-lead-face-0 ((t (:background ,(face-background 'default) :foreground ,(face-attribute 'ansi-color-bright-cyan :foreground)))))
-   `(avy-lead-face-1 ((t (:background ,(face-background 'default) :foreground ,(face-attribute 'ansi-color-bright-green :foreground)))))
-   `(avy-lead-face-2 ((t (:background ,(face-background 'default) :foreground ,(face-attribute 'ansi-color-bright-yellow :foreground))))))
-  (setq avy-style 'words))
+(use-package pcre
+  ;; :straight if you use stright.el
+  :elpaca (pcre :host github :repo "syohex/emacs-pcre"
+                  :pre-build ("make" "all")
+                  :files (:default "pcre.el" "pcre-core.so")))
+(use-package hop
+  :elpaca (hop :host github :repo "Animeshz/hop.el"))
 #+end_src
 ** UI
 *** Unicode
@@ -617,36 +615,14 @@ Everyone forgets keybindings
   (which-key-mode))
 #+end_src
 *** Theme
-**** Doom theme
-Dark theme all the way.
-#+begin_src emacs-lisp
-(use-package doom-themes
-  :config
-  (setq doom-themes-enable-bold t
-        doom-themes-enable-italic t)
-  (doom-themes-visual-bell-config)
-
-  (load-theme 'doom-dracula t)
-  (add-hook 'server-after-make-frame-functions
-            (lambda (frame)
-              (with-selected-frame frame
-                (load-theme 'doom-dracula t))))
-  (custom-set-faces
-   '(doom-themes-visual-bell ((t (:background "#00FFFF"))))
-   '(emms-playlist-selected-face ((t (:foreground "royal blue"))))
-   '(emms-playlist-track-face ((t (:foreground "#5da3e7"))))
-   '(emms-playlist-selected-face ((t (:foreground "royal blue"))))
-   '(emms-playlist-track-face ((t (:foreground "#5da3e7"))))
-   '(org-ellipsis (( t(:foreground "#C678DD"))))))
-#+end_src
 **** Modus theme
 High contrast theme
 #+begin_src emacs-lisp
-;; (use-package modus-themes
-;;    :config
-;;    (setq modus-themes-italic-constructs t
-;;          modus-themes-bold-constructs t)
-;;    (load-theme 'modus-vivendi t))
+(use-package modus-themes
+   :config
+   (setq modus-themes-italic-constructs t
+         modus-themes-bold-constructs t)
+   (load-theme 'modus-vivendi-tinted t))
 #+end_src
 *** Doom modeline
 Changing the default modeline to a better one ( in my opinion )
@@ -703,12 +679,20 @@ Smart commentor for most of the languages
 ;; Best programming language so we need to include it
 (use-package rustic
   :config
+  (setq rustic-enable-detached-file-support t)
   (setq rustic-lsp-client 'eglot))
 
 (use-package eldoc-box
   :config
   (setq eldoc-echo-area-use-multiline-p nil))
 
+(use-package flycheck
+  :config
+  (global-flycheck-mode 1))
+(use-package flycheck-eglot
+  :after (flycheck eglot)
+  :config
+  (global-flycheck-eglot-mode 1))
 (use-package eglot
   :after (eldoc-box)
   :hook ((prog-mode . eglot-ensure))
@@ -734,7 +718,19 @@ Smart commentor for most of the languages
 I still have not worked out typescript support with tsx and jsx file completion but svelte works perfectly
 **** Typescript Mode
 #+begin_src emacs-lisp
-(use-package typescript-mode)
+(use-package typescript-mode
+  :after tree-sitter
+  :config
+  ;; we choose this instead of tsx-mode so that eglot can automatically figure out language for server
+  ;; see https://github.com/joaotavora/eglot/issues/624 and https://github.com/joaotavora/eglot#handling-quirky-servers
+  (define-derived-mode typescriptreact-mode typescript-mode
+    "TypeScript TSX")
+
+  ;; use our derived mode for tsx files
+  (add-to-list 'auto-mode-alist '("\\.tsx?\\'" . typescriptreact-mode))
+  ;; by default, typescript-mode is mapped to the treesitter typescript parser
+  ;; use our derived mode to map both .tsx AND .ts -> typescriptreact-mode -> treesitter tsx
+  (add-to-list 'tree-sitter-major-mode-language-alist '(typescriptreact-mode . tsx)))
 #+end_src
 **** Web mode
 #+begin_src emacs-lisp
@@ -1165,9 +1161,11 @@ Remove this block with you are using straight.el
 #+begin_src emacs-lisp
 (general-create-definer aadi/leader-keys
   :states '(normal hybrid motion visual operator emacs)
+  :keymaps '(override global local)
   :prefix "SPC")
 (general-create-definer aadi/leader-local-keys
   :states '(normal visual emacs)
+  :keymaps '(override global local)
   :prefix "SPC m")
 #+end_src
 ** General good defaults
@@ -1186,7 +1184,7 @@ Remove this block with you are using straight.el
 
 (general-define-key
  :states '(normal motion visual operator emacs)
- :keymaps '(override local global)
+ :keymaps '(local global)
 
  "H" 'evil-beginning-of-line
  "L" 'evil-end-of-line)
@@ -1308,12 +1306,12 @@ Remove this block with you are using straight.el
  "M-'" 'consult-register-store
  "M-\"" 'consult-register)
 #+end_src
-** Avy Map
+** Hop Map
 #+begin_src emacs-lisp
 (general-define-key
  :states '(normal motion)
- "g w" '(avy-goto-word-0 :which-key "avy goto word")
- "g c" '(avy-goto-char :which-key "avy goto char"))
+ "g w" '(hop-word :which-key "goto word")
+ "g c" '(hop-char :which-key "goto char"))
 #+end_src
 ** Buffer Map
 #+begin_src emacs-lisp

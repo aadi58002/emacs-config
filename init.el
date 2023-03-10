@@ -17,8 +17,7 @@
 (setq use-short-answers t)                                   ;; In prompt answer instead of typing complete yes with this y will work as well
 
 (global-display-line-numbers-mode t)                         ;;All people like line numbers right
-(setq display-line-numbers-type 'relative
-      scroll-margin 30)
+(setq display-line-numbers-type 'relative)
 
 (setq custom-file (locate-user-emacs-file "custom.el"))
 (load custom-file 'noerror 'nomessage)
@@ -72,7 +71,7 @@
 (defun my/backward-kill-word ()
   "Kill backward to the beginning of the current word, but do not cross lines."
   (interactive)
-   (if (not (looking-back "^\\s-*")) (backward-kill-word 1) (delete-horizontal-space)))
+  (if (not (looking-back "^\\s-*")) (backward-kill-word 1) (delete-horizontal-space)))
 
 (defun adi--sudo-file-path (file)
   (let ((host (or (file-remote-p file 'host) "localhost")))
@@ -118,13 +117,13 @@
       (user-error "Unable to open %S" file))))
 
 (defun my-denote--add-todo-keyword ()
-   "Add the todo keyword to the new captured note if it is under the Todo Sub directory"
-    (let* ((file denote-last-path))
-        (if (string= (file-name-directory file) (file-name-as-directory denote-todo-directory))
-            (let* ((file-type (denote-filetype-heuristics file))
-                (title (denote-retrieve-title-value file file-type))
-                (keywords (denote-retrieve-keywords-value file file-type)))
-                (denote-rename-file file title (append '("todo") keywords))))))
+  "Add the todo keyword to the new captured note if it is under the Todo Sub directory"
+  (let* ((file denote-last-path))
+    (if (string= (file-name-directory file) (file-name-as-directory denote-todo-directory))
+        (let* ((file-type (denote-filetype-heuristics file))
+               (title (denote-retrieve-title-value file file-type))
+               (keywords (denote-retrieve-keywords-value file file-type)))
+          (denote-rename-file file title (append '("todo") keywords))))))
 
 (defun my-denote--add-todo-or-archive-keyword (file file-type)
   "Replace todo with archive keyword (or vice versa) in FILE, given FILE-TYPE.
@@ -164,7 +163,6 @@
 
 (defun Competitive-coding-output-input-toggle ()
   ;; Open side buffer to show inputf.in and outputf.in files as input and output of code file with the `SPC m z` Keybinding in rust-mode
-
   (interactive)
   (delete-other-windows)
   (kill-matching-buffers "*.in")
@@ -180,8 +178,7 @@
   (interactive)
   (widen)
   (erase-buffer)
-  (insert "chef")
-  (tempel-expand)
+  (tempel-insert 'chef)
   (narrow-to-defun))
 
 (defun code-input-refresh()
@@ -192,18 +189,19 @@
 
 ;; source: http://steve.yegge.googlepages.com/my-dot-emacs-file
 (defun copy-current-file (new-name)
-    "Copy current file to a NEW-NAME."
-    (interactive (list
+  "Copy current file to a NEW-NAME."
+  (interactive (list
                 (read-string "New name: " (current-kill 0) nil (current-kill 0))))
-    (let ((name (buffer-name))
+  (let ((name (buffer-name))
         (filename (buffer-file-name)))
     (if (not filename)
         (message "Buffer '%s' is not visiting a file!" name)
-        (if (get-buffer new-name)
-            (message "A buffer named '%s' already exists!" new-name)
-            (copy-file filename (concat (replace-regexp-in-string " " "" (capitalize (replace-regexp-in-string "[^[:word:]_]" " " new-name))) ".rs") 1)))))
+      (if (get-buffer new-name)
+          (message "A buffer named '%s' already exists!" new-name)
+        (copy-file filename (concat (replace-regexp-in-string " " "" (capitalize (replace-regexp-in-string "[^[:word:]_]" " " new-name))) ".rs") 1)))))
 
 (defun kitty-async-process ()
+  "Launch a kitty terminal process in the current emacs directory"
   (interactive)
   (start-process "kitty" nil "setsid" "kitty" "-d" default-directory))
 
@@ -267,13 +265,11 @@
 ;; (let ((straight-x-file (expand-file-name "straight/repos/straight.el/straight-x.el" user-emacs-directory)))
 ;;   (if (file-exists-p straight-x-file) (load straight-x-file)))
 
-(use-package undo-fu)
-
-(use-package undohist
-  :init
-  (setq undo-tree-history-directory-alist '(((concat user-emacs-directory "/undohist"))))
+(use-package undo-tree
   :config
-  (undohist-initialize))
+  (setq undo-tree-visualizer-diff t
+        undo-tree-auto-save-history t)
+  (global-undo-tree-mode))
 
 (use-package savehist
   :elpaca nil
@@ -281,22 +277,23 @@
   (savehist-mode))
 
 (use-package evil
-      :init
-      (setq evil-want-integration t) ;; This is optional since it's already set to t by default.
-      (setq evil-want-keybinding nil)
-      (setq evil-undo-system 'undo-fu)
-      :config
-      (evil-mode 1))
-(setq evil-move-cursor-back nil
+  :init
+  (setq evil-want-integration t) ;; This is optional since it's already set to t by default.
+  (setq evil-want-keybinding nil)
+  (setq evil-undo-system 'undo-tree)
+  :config
+  (evil-mode 1))
+  (setq evil-move-cursor-back nil
       evil-want-fine-undo t
       evil-move-beyond-eol t
       evil-respect-visual-line-mode t         ;; I don't know why this does not work and keep the visual selection after one indentation
       evil-org-retain-visual-state-on-shift t
+      evil-search-module 'evil-search
       evil-vsplit-window-right t
       evil-split-window-below t)
-(with-eval-after-load 'evil
-  (with-eval-after-load 'elpaca-ui (evil-make-intercept-map elpaca-ui-mode-map))
-  (with-eval-after-load 'elpaca-info (evil-make-intercept-map elpaca-info-mode-map)))
+  (with-eval-after-load 'evil
+    (with-eval-after-load 'elpaca-ui (evil-make-intercept-map elpaca-ui-mode-map))
+    (with-eval-after-load 'elpaca-info (evil-make-intercept-map elpaca-info-mode-map)))
 
 (use-package general
   :config
@@ -305,13 +302,16 @@
   (general-evil-setup t))
 
 (use-package evil-collection
-    :after evil
-    :config
-    (evil-collection-init))
+  :after (evil)
+  :config
+  (evil-collection-init))
+
+(use-package tramp
+  :elpaca nil)
 
 (use-package pdf-tools
-   :config
-   (add-to-list 'auto-mode-alist '("\\.pdf\\'" . pdf-view-mode)))
+  :config
+  (add-to-list 'auto-mode-alist '("\\.pdf\\'" . pdf-view-mode)))
 
 (use-package tempel
   :config
@@ -328,6 +328,7 @@
   (setq emms-source-file-default-directory "~/Music/"
         emms-info-functions '(emms-info-native)
         emms-player-list '(emms-player-mpv)
+        emms-history-file nil
         emms-repeat-track t
         emms-mode-line-mode t
         emms-playlist-buffer-name "*Music*"
@@ -339,16 +340,13 @@
 
 (use-package helpful)
 
-(use-package avy
-  :config
-  (setq avy-linum-mode t)
-  (setq avy-background t)
-  (custom-set-faces
-   `(avy-lead-face ((t (:background ,(face-background 'default) :foreground ,(face-attribute 'ansi-color-bright-red :foreground) :weight bold))))
-   `(avy-lead-face-0 ((t (:background ,(face-background 'default) :foreground ,(face-attribute 'ansi-color-bright-cyan :foreground)))))
-   `(avy-lead-face-1 ((t (:background ,(face-background 'default) :foreground ,(face-attribute 'ansi-color-bright-green :foreground)))))
-   `(avy-lead-face-2 ((t (:background ,(face-background 'default) :foreground ,(face-attribute 'ansi-color-bright-yellow :foreground))))))
-  (setq avy-style 'words))
+(use-package pcre
+  ;; :straight if you use stright.el
+  :elpaca (pcre :host github :repo "syohex/emacs-pcre"
+                  :pre-build ("make" "all")
+                  :files (:default "pcre.el" "pcre-core.so")))
+(use-package hop
+  :elpaca (hop :host github :repo "Animeshz/hop.el"))
 
 (use-package unicode-fonts)
 
@@ -371,67 +369,48 @@
 
 (setq banner-icons-list (file-expand-wildcards (concat user-emacs-directory "icons/*")))
 (use-package dashboard
-        :after all-the-icons
-        :config
-        (setq dashboard-items '((recents  . 5)
-                                (agenda . 5)
-                                (projects . 5)))
-        (setq dashboard-set-heading-icons t)
-        (setq dashboard-startup-banner (random-element-of-list banner-icons-list))
-        (setq dashboard-banner-logo-title "")
-        (setq dashboard-image-banner-max-height 500)
-        (setq dashboard-set-footer nil)
-        (setq dashboard-set-file-icons t)
-        (setq dashboard-set-init-info t)
-        (setq initial-buffer-choice (lambda () (get-buffer-create "*dashboard*")))
-        (dashboard-setup-startup-hook))
+  :after all-the-icons
+  :config
+  (setq dashboard-items '((recents  . 5)
+                          (agenda . 5)
+                          (projects . 5)))
+  (setq dashboard-set-heading-icons t)
+  (setq dashboard-startup-banner (random-element-of-list banner-icons-list))
+  (setq dashboard-banner-logo-title "")
+  (setq dashboard-image-banner-max-height 500)
+  (setq dashboard-set-footer nil)
+  (setq dashboard-set-file-icons t)
+  (setq dashboard-set-init-info t)
+  (setq initial-buffer-choice (lambda () (get-buffer-create "*dashboard*")))
+  (dashboard-setup-startup-hook))
 (add-hook 'server-after-make-frame-hook 'dashboard-refresh-buffer)
 
 (use-package which-key
   :init
   (which-key-mode))
 
-(use-package doom-themes
-  :config
-  (setq doom-themes-enable-bold t
-        doom-themes-enable-italic t)
-  (doom-themes-visual-bell-config)
-
-  (load-theme 'doom-dracula t)
-  (add-hook 'server-after-make-frame-functions
-              (lambda (frame)
-              (with-selected-frame frame
-                  (load-theme 'doom-dracula t))))
-  (custom-set-faces
-    '(doom-themes-visual-bell ((t (:background "#00FFFF"))))
-    '(emms-playlist-selected-face ((t (:foreground "royal blue"))))
-    '(emms-playlist-track-face ((t (:foreground "#5da3e7"))))
-    '(emms-playlist-selected-face ((t (:foreground "royal blue"))))
-    '(emms-playlist-track-face ((t (:foreground "#5da3e7"))))
-    '(org-ellipsis (( t(:foreground "#C678DD"))))))
-
-;; (use-package modus-themes
-;;    :config
-;;    (setq modus-themes-italic-constructs t
-;;          modus-themes-bold-constructs t)
-;;    (load-theme 'modus-vivendi t))
+(use-package modus-themes
+   :config
+   (setq modus-themes-italic-constructs t
+         modus-themes-bold-constructs t)
+   (load-theme 'modus-vivendi-tinted t))
 
 (use-package doom-modeline
-    :init (doom-modeline-mode 1)
-    :config
-    (display-battery-mode 1)
-    (setq doom-modeline-project-detection 'truncate-upto-project
-          doom-modeline-enable-word-count t
-          doom-modeline-buffer-encoding nil
-          doom-modeline-env-version t
-          doom-modeline-hud t))
+  :init (doom-modeline-mode 1)
+  :config
+  (display-battery-mode 1)
+  (setq doom-modeline-project-detection 'truncate-upto-project
+        doom-modeline-enable-word-count t
+        doom-modeline-buffer-encoding nil
+        doom-modeline-env-version t
+        doom-modeline-hud t))
 
 (use-package all-the-icons)
 
 (use-package all-the-icons-completion
-      :config
-      (all-the-icons-completion-mode)
-      (add-hook 'marginalia-mode-hook #'all-the-icons-completion-marginalia-setup))
+  :config
+  (all-the-icons-completion-mode)
+  (add-hook 'marginalia-mode-hook #'all-the-icons-completion-marginalia-setup))
 
 (use-package kind-icon
   :after corfu
@@ -449,12 +428,20 @@
 ;; Best programming language so we need to include it
 (use-package rustic
   :config
+  (setq rustic-enable-detached-file-support t)
   (setq rustic-lsp-client 'eglot))
 
 (use-package eldoc-box
   :config
   (setq eldoc-echo-area-use-multiline-p nil))
 
+(use-package flycheck
+  :config
+  (global-flycheck-mode 1))
+(use-package flycheck-eglot
+  :after (flycheck eglot)
+  :config
+  (global-flycheck-eglot-mode 1))
 (use-package eglot
   :after (eldoc-box)
   :hook ((prog-mode . eglot-ensure))
@@ -476,16 +463,28 @@
                                         . ,(eglot-alternatives
                                             '("ccls" "clangd")))))
 
-(use-package typescript-mode)
+(use-package typescript-mode
+  :after tree-sitter
+  :config
+  ;; we choose this instead of tsx-mode so that eglot can automatically figure out language for server
+  ;; see https://github.com/joaotavora/eglot/issues/624 and https://github.com/joaotavora/eglot#handling-quirky-servers
+  (define-derived-mode typescriptreact-mode typescript-mode
+    "TypeScript TSX")
 
-(setq web-mode-markup-indent-offset 2
-      web-mode-code-indent-offset 2
-      web-mode-css-indent-offset 2)
+  ;; use our derived mode for tsx files
+  (add-to-list 'auto-mode-alist '("\\.tsx?\\'" . typescriptreact-mode))
+  ;; by default, typescript-mode is mapped to the treesitter typescript parser
+  ;; use our derived mode to map both .tsx AND .ts -> typescriptreact-mode -> treesitter tsx
+  (add-to-list 'tree-sitter-major-mode-language-alist '(typescriptreact-mode . tsx)))
+
 (use-package web-mode
-    :commands web-mode)
-
-(add-to-list 'auto-mode-alist '("\\.svelte\\'" . web-mode))
-(setq web-mode-engines-alist '(("svelte" . "\\.svelte\\'")))
+  :config
+  (setq web-mode-markup-indent-offset 2
+        web-mode-code-indent-offset 2
+        web-mode-css-indent-offset 2)
+  ;; Svelte Mode
+  (add-to-list 'auto-mode-alist '("\\.svelte\\'" . web-mode))
+  (setq web-mode-engines-alist '(("svelte" . "\\.svelte\\'"))))
 
 (use-package tree-sitter
   :config
@@ -495,8 +494,8 @@
   :config
   ;; This makes every node a link to a section of code
   (setq tree-sitter-debug-jump-buttons t
-          ;; and this highlights the entire sub tree in your code
-          tree-sitter-debug-highlight-jump-region t))
+        ;; and this highlights the entire sub tree in your code
+        tree-sitter-debug-highlight-jump-region t))
 
 (use-package magit
   :config
@@ -504,16 +503,16 @@
   (setq magit-display-buffer-function #'magit-display-buffer-fullframe-status-v1))
 
 (use-package git-gutter-fringe
-    :config
-    (global-git-gutter-mode +1)
-    (setq-default fringes-outside-margins t)
-        ;; thin fringe bitmaps
-        (define-fringe-bitmap 'git-gutter-fr:added [224]
-        nil nil '(center repeated))
-        (define-fringe-bitmap 'git-gutter-fr:modified [224]
-        nil nil '(center repeated))
-        (define-fringe-bitmap 'git-gutter-fr:deleted [128 192 224 240]
-        nil nil 'bottom))
+  :config
+  (global-git-gutter-mode +1)
+  (setq-default fringes-outside-margins t)
+  ;; thin fringe bitmaps
+  (define-fringe-bitmap 'git-gutter-fr:added [224]
+    nil nil '(center repeated))
+  (define-fringe-bitmap 'git-gutter-fr:modified [224]
+    nil nil '(center repeated))
+  (define-fringe-bitmap 'git-gutter-fr:deleted [128 192 224 240]
+    nil nil 'bottom))
 
 (use-package smart-compile
   :config
@@ -522,8 +521,8 @@
   (add-to-list 'smart-compile-alist  '("\\.rs$" . "touch inputf.in && cargo run -q < inputf.in &> outputf.in ")))
 
 (use-package evil-multiedit
-    :config
-    (evil-multiedit-default-keybinds))
+  :config
+  (evil-multiedit-default-keybinds))
 
 (use-package projectile
   :init
@@ -555,76 +554,68 @@
   (corfu-popupinfo-mode 1))
 
 (use-package cape
-    :init
-    (add-to-list 'completion-at-point-functions #'cape-file)
-    (add-to-list 'completion-at-point-functions #'cape-dabbrev))
+  :init
+  (add-to-list 'completion-at-point-functions #'cape-file)
+  (add-to-list 'completion-at-point-functions #'cape-dabbrev))
 
 (use-package embark
-        :bind
-        (("C-;" . embark-act)         ;; pick some comfortable binding
-         ("M-." . embark-dwim)        ;; good alternative: M-.
-         ("C-h B" . embark-bindings)) ;; alternative for `describe-bindings'
-
-        :init
-
-        ;; Optionally replace the key help with a completing-read interface
-        (setq prefix-help-command #'embark-prefix-help-command
-              embark-quit-after-action nil)
-
-        :config
-        ;; (define-key embark-symbol-map "D" #'devdocs-lookup)
-        ;; (define-key embark-function-map "D" #'devdocs-lookup)
-
-        ;; Hide the mode line of the Embark live/completions buffers
-        (add-to-list 'display-buffer-alist
-                     '("\\`\\*Embark Collect \\(Live\\|Completions\\)\\*"
-                       nil
-                       (window-parameters (mode-line-format . none)))))
-    (defun embark-which-key-indicator ()
-      "An embark indicator that displays keymaps using which-key.
+  :bind
+  (("C-;" . embark-act)         ;; pick some comfortable binding
+   ("C-h B" . embark-bindings)) ;; alternative for `describe-bindings'
+  :init
+  ;; Optionally replace the key help with a completing-read interface
+  (setq prefix-help-command #'embark-prefix-help-command
+        embark-quit-after-action nil)
+  :config
+  ;; Hide the mode line of the Embark live/completions buffers
+  (add-to-list 'display-buffer-alist
+               '("\\`\\*Embark Collect \\(Live\\|Completions\\)\\*"
+                 nil
+                 (window-parameters (mode-line-format . none)))))
+(defun embark-which-key-indicator ()
+  "An embark indicator that displays keymaps using which-key.
     The which-key help message will show the type and value of the
     current target followed by an ellipsis if there are further
     targets."
-      (lambda (&optional keymap targets prefix)
-        (if (null keymap)
-            (which-key--hide-popup-ignore-command)
-          (which-key--show-keymap
-           (if (eq (plist-get (car targets) :type) 'embark-become)
-               "Become"
-             (format "Act on %s '%s'%s"
-                     (plist-get (car targets) :type)
-                     (embark--truncate-target (plist-get (car targets) :target))
-                     (if (cdr targets) "…" "")))
-           (if prefix
-               (pcase (lookup-key keymap prefix 'accept-default)
-                 ((and (pred keymapp) km) km)
-                 (_ (key-binding prefix 'accept-default)))
-             keymap)
-           nil nil t (lambda (binding)
-                       (not (string-suffix-p "-argument" (cdr binding))))))))
+  (lambda (&optional keymap targets prefix)
+    (if (null keymap)
+        (which-key--hide-popup-ignore-command)
+      (which-key--show-keymap
+       (if (eq (plist-get (car targets) :type) 'embark-become)
+           "Become"
+         (format "Act on %s '%s'%s"
+                 (plist-get (car targets) :type)
+                 (embark--truncate-target (plist-get (car targets) :target))
+                 (if (cdr targets) "…" "")))
+       (if prefix
+           (pcase (lookup-key keymap prefix 'accept-default)
+             ((and (pred keymapp) km) km)
+             (_ (key-binding prefix 'accept-default)))
+         keymap)
+       nil nil t (lambda (binding)
+                   (not (string-suffix-p "-argument" (cdr binding))))))))
 
-    (setq embark-indicators
+(setq embark-indicators
       '(embark-which-key-indicator
         embark-highlight-indicator
         embark-isearch-highlight-indicator))
 
-    (defun embark-hide-which-key-indicator (fn &rest args)
-      "Hide the which-key indicator immediately when using the completing-read prompter."
-      (which-key--hide-popup-ignore-command)
-      (let ((embark-indicators
-             (remq #'embark-which-key-indicator embark-indicators)))
-          (apply fn args)))
+(defun embark-hide-which-key-indicator (fn &rest args)
+  "Hide the which-key indicator immediately when using the completing-read prompter."
+  (which-key--hide-popup-ignore-command)
+  (let ((embark-indicators
+         (remq #'embark-which-key-indicator embark-indicators)))
+    (apply fn args)))
 
-    (advice-add #'embark-completing-read-prompter
-                    :around #'embark-hide-which-key-indicator)
+(advice-add #'embark-completing-read-prompter :around #'embark-hide-which-key-indicator)
 
 (use-package vertico
-    :elpaca (vertico :files (:defaults "extensions/*.el"))
-    :init
-    (setq vertico-count 20
-          vertico-resize nil
-          vertico-cycle t)
-    (vertico-mode))
+  :elpaca (vertico :files (:defaults "extensions/*.el"))
+  :init
+  (setq vertico-count 20
+        vertico-resize nil
+        vertico-cycle t)
+  (vertico-mode))
 
 (defun +embark-live-vertico ()
   "Shrink Vertico minibuffer when `embark-live' is active."
@@ -650,26 +641,26 @@
                    crm-separator)
                   (car args))
           (cdr args)))
-    (advice-add #'completing-read-multiple :filter-args #'crm-indicator)
+  (advice-add #'completing-read-multiple :filter-args #'crm-indicator)
 
-    (setq minibuffer-prompt-properties
-            '(read-only t cursor-intangible t face minibuffer-prompt))
-    (add-hook 'minibuffer-setup-hook #'cursor-intangible-mode)
-    (setq enable-recursive-minibuffers t
-          completion-cycle-threshold 3
-          tab-always-indent 'complete))
+  (setq minibuffer-prompt-properties
+        '(read-only t cursor-intangible t face minibuffer-prompt))
+  (add-hook 'minibuffer-setup-hook #'cursor-intangible-mode)
+  (setq enable-recursive-minibuffers t
+        completion-cycle-threshold 3
+        tab-always-indent 'complete))
 
 (use-package marginalia
   :config
   (marginalia-mode)
   (setq marginalia-align 'center
-    marginalia-align-offset 20))
+        marginalia-align-offset 20))
 
 (use-package orderless
-    :custom
-    ;;(orderless-matching-styles '(orderless-literal orderless-regexp orderless-flex))
-    (completion-styles '(orderless))
-    (completion-category-overrides '((file (styles partial-completion)))))
+  :custom
+  ;;(orderless-matching-styles '(orderless-literal orderless-regexp orderless-flex))
+  (completion-styles '(orderless))
+  (completion-category-overrides '((file (styles partial-completion)))))
 
 (defvar consult--fd-command nil)
 (defun consult--fd-builder (input)
@@ -712,11 +703,11 @@
    consult--source-recent-file consult--source-project-recent-file
    ;; :preview-key (kbd "M-.")
    :preview-key '(:debounce 0.4 any))
-   (defun consult--orderless-regexp-compiler (input type &rest _config)
-        (setq input (orderless-pattern-compiler input))
-        (cons
-        (mapcar (lambda (r) (consult--convert-regexp r type)) input)
-        (lambda (str) (orderless--highlight input str))))
+  (defun consult--orderless-regexp-compiler (input type &rest _config)
+    (setq input (orderless-pattern-compiler input))
+    (cons
+     (mapcar (lambda (r) (consult--convert-regexp r type)) input)
+     (lambda (str) (orderless--highlight input str))))
 
   (setq consult--regexp-compiler #'consult--orderless-regexp-compiler)
   (setq consult-narrow-key "<")) ;; (kbd "C-+")
@@ -734,47 +725,47 @@
 (use-package toc-org)
 
 (defadvice org-babel-execute-src-block (around load-language nil activate)
-    "Load language if needed"
-    (let ((language (org-element-property :language (org-element-at-point))))
-        (unless (cdr (assoc (intern language) org-babel-load-languages))
-        (add-to-list 'org-babel-load-languages (cons (intern language) t))
-        (org-babel-do-load-languages 'org-babel-load-languages org-babel-load-languages))
-        ad-do-it))
+  "Load language if needed"
+  (let ((language (org-element-property :language (org-element-at-point))))
+    (unless (cdr (assoc (intern language) org-babel-load-languages))
+      (add-to-list 'org-babel-load-languages (cons (intern language) t))
+      (org-babel-do-load-languages 'org-babel-load-languages org-babel-load-languages))
+    ad-do-it))
 
 ;; Life todo mangement with org mode and org agenda
 (setq org-log-done 'time)
 (setq org-todo-keywords
-    '((sequence "TODO(t)" "PROJ(p)" "ACTIVE(a)" "REVIEW(r)" "START(s)" "NEXT(N)" "WORKING(w)" "HOLD(h)" "|" "DONE(d)" "KILL(k)")
+      '((sequence "TODO(t)" "PROJ(p)" "ACTIVE(a)" "REVIEW(r)" "START(s)" "NEXT(N)" "WORKING(w)" "HOLD(h)" "|" "DONE(d)" "KILL(k)")
         (sequence "|" "OKAY(o)" "YES(y)" "NO(n)")))
 
 (defun adi/org-setup()
-    (org-indent-mode +1)
-    (toc-org-mode +1))
+  (org-indent-mode +1)
+  (toc-org-mode +1))
 
 (add-hook 'org-mode-hook 'adi/org-setup)
 
 (use-package org-modern
-   :config
-    (setq org-use-property-inheritance t ;;Might fix some bugs with org mode src block
-          org-startup-indented t
-          org-confirm-babel-evaluate nil
-          org-src-preserve-indentation t
-          org-export-preserve-breaks t
-          org-log-into-drawer t
-          org-link-file-path-type 'relative
-          org-ellipsis "  "                                     ;;fun symbols   ,    , 
-          org-enforce-todo-checkbox-dependencies t
-          org-enforce-todo-dependencies t
-          org-auto-align-tags nil
-          org-tags-column 0
-          org-catch-invisible-edits 'show-and-error
-          org-modern-checkbox nil
-          org-modern-table nil
-          org-insert-heading-respect-content t
-          org-hide-emphasis-markers t
-          org-pretty-entities t
-          org-ellipsis "…")
-          (global-org-modern-mode))
+  :config
+  (setq org-use-property-inheritance t ;;Might fix some bugs with org mode src block
+        org-startup-indented t
+        org-confirm-babel-evaluate nil
+        org-src-preserve-indentation t
+        org-export-preserve-breaks t
+        org-log-into-drawer t
+        org-link-file-path-type 'relative
+        org-ellipsis "  "                                     ;;fun symbols   ,    , 
+        org-enforce-todo-checkbox-dependencies t
+        org-enforce-todo-dependencies t
+        org-auto-align-tags nil
+        org-tags-column 0
+        org-catch-invisible-edits 'show-and-error
+        org-modern-checkbox nil
+        org-modern-table nil
+        org-insert-heading-respect-content t
+        org-hide-emphasis-markers t
+        org-pretty-entities t
+        org-ellipsis "…")
+  (global-org-modern-mode))
 
 (setq org-agenda-files '("~/Documents/Denote/Todo/"))
 (setq org-agenda-window-setup 'current-window
@@ -848,11 +839,13 @@
 (if (fboundp 'elpaca-wait)(elpaca-wait))
 
 (general-create-definer aadi/leader-keys
-    :states '(normal hybrid motion visual operator emacs)
-    :prefix "SPC")
+  :states '(normal hybrid motion visual operator emacs)
+  :keymaps '(override global local)
+  :prefix "SPC")
 (general-create-definer aadi/leader-local-keys
-    :states '(normal visual emacs)
-    :prefix "SPC m")
+  :states '(normal visual emacs)
+  :keymaps '(override global local)
+  :prefix "SPC m")
 
 (global-set-key (kbd "<escape>") 'keyboard-escape-quit)
 (global-set-key (kbd "C-;") 'embark-act)
@@ -868,7 +861,7 @@
 
 (general-define-key
  :states '(normal motion visual operator emacs)
- :keymaps '(override local global)
+ :keymaps '(local global)
 
  "H" 'evil-beginning-of-line
  "L" 'evil-end-of-line)
@@ -883,165 +876,154 @@
  "M-/" 'evilnc-comment-or-uncomment-lines)
 
 (general-define-key
-  :states 'normal
-  "," 'kitty-async-process)
+ :states 'normal
+ "," 'kitty-async-process)
 
 (general-define-key
-  :states 'insert
-  "<C-backspace>" 'my/backward-kill-word)
+ :states 'insert
+ "<C-backspace>" 'my/backward-kill-word)
 
 (aadi/leader-keys
-     "z" 'org-agenda)
+  "z" 'org-agenda)
 
 (general-define-key
-    :keymaps 'dashboard-mode-map
-    :states '(normal visual emacs)
-    "RET" 'dashboard-return)
+ :keymaps 'dashboard-mode-map
+ :states '(normal visual emacs)
+ "RET" 'dashboard-return)
 
 (general-define-key
-    :keymaps 'transient-map
-    "<escape>" 'transient-quit-one)
+ :keymaps 'transient-map
+ "<escape>" 'transient-quit-one)
 (aadi/leader-keys
-    :states '(normal motion)
-    "g" '(:ignore t :which-key "git")
-    "g s" 'consult-git-grep
-    "g g" 'magit)
-
-(aadi/leader-keys
-    :states '(normal motion)
-    "n" '(:ignore t :which-key "denote")
-    "n c" 'denote-create-note-in-subdirectory
-    "n n" 'denote
-    "n N" 'denote-type
-    "n d" 'denote-date
-    "n s" 'denote-subdirectory
-    "n t" 'denote-template
-    "n i" 'denote-link
-    "n I" 'denote-link-add-links
-    "n b" 'denote-link-backlinks
-    "n f f" 'denote-link-find-file
-    "n f b" 'denote-link-find-backlink
-    "n r" 'denote-rename-file
-    "n R" 'denote-rename-file-using-front-matter)
+  :states '(normal motion)
+  "g" '(:ignore t :which-key "git")
+  "g s" 'consult-git-grep
+  "g g" 'magit)
 
 (aadi/leader-keys
-    :keymaps 'projectile-mode-map
-    :states '(normal motion)
-    "p" '(:keymap projectile-command-map :whick-key "projects"))
-
-;; (general-define-key
-;;   "M-S-x" 'execute-extended-command
-;;   "M-x" 'consult-mode-command)
-
-(aadi/leader-keys
-    :states '(normal motion)
-    "m" '(:ignore t :which-key "mode")
-    "m k" 'consult-kmacro)
-
-(aadi/leader-keys
-    :states '(normal motion)
-    "c" '(:ignore t :which-key "commands")
-    "c r" '(consult-complex-command :which-key "Complex Command repeat"))
+  :states '(normal motion)
+  "n" '(:ignore t :which-key "denote")
+  "n c" 'denote-create-note-in-subdirectory
+  "n n" 'denote
+  "n N" 'denote-type
+  "n d" 'denote-date
+  "n s" 'denote-subdirectory
+  "n t" 'denote-template
+  "n i" 'denote-link
+  "n I" 'denote-link-add-links
+  "n b" 'denote-link-backlinks
+  "n f f" 'denote-link-find-file
+  "n f b" 'denote-link-find-backlink
+  "n r" 'denote-rename-file
+  "n R" 'denote-rename-file-using-front-matter)
 
 (aadi/leader-keys
-    :states '(normal motion)
-    "f" '(:ignore t :which-key "files")
-    "f b" 'consult-bookmark
-    "f r" 'consult-recent-file)
-
-(general-define-key
-    [remap projectile-ripgrep] 'consult-ripgrep
-    [remap projectile-find-file] 'consult-find)
-
-(general-define-key
-    :states '(normal motion)
-    "g" '(:ignore t :which-key "goto"))
-
-(general-define-key
-    :states '(normal motion)
-    :prefix "g"
-    "e" 'consult-compile-error
-    "l" 'consult-goto-line)
-
-(general-define-key
-    :states '(normal motion)
-    "M-C-'" 'consult-register-load
-    "M-'" 'consult-register-store
-    "M-\"" 'consult-register)
-
-(general-define-key
-    :states '(normal motion)
-    "g w" '(avy-goto-word-0 :which-key "avy goto word")
-    "g c" '(avy-goto-char :which-key "avy goto char"))
+  :keymaps 'projectile-mode-map
+  :states '(normal motion)
+  "p" '(:keymap projectile-command-map :whick-key "projects"))
 
 (aadi/leader-keys
-    :states '(normal motion)
-    "b" '(:ignore t :which-key "buffer")
-    "b b" 'consult-buffer
-    "b B" 'bookmark-bmenu-list
-    "b k" 'kill-this-buffer)
+  :states '(normal motion)
+  "m" '(:ignore t :which-key "mode")
+  "m k" 'consult-kmacro)
+
+(aadi/leader-keys
+  :states '(normal motion)
+  "c" '(:ignore t :which-key "commands")
+  "c r" '(consult-complex-command :which-key "Complex Command repeat"))
+
+(aadi/leader-keys
+  :states '(normal motion)
+  "f" '(:ignore t :which-key "files")
+  "f b" 'consult-bookmark
+  "f r" 'consult-recent-file)
 
 (general-define-key
-    :states '(normal motion)
-    "C-c a" 'org-capture)
+ [remap projectile-ripgrep] 'consult-ripgrep
+ [remap projectile-find-file] 'consult-find)
+
 (general-define-key
-    :keymaps 'org-mode-map
-    :states 'normal
-    "<RET>" '+org/dwim-at-point
-    "?\t" 'org-cycle
-    "C-c a" 'link-hint-copy-link-at-point
-    "z i" '(org-toggle-inline-images :whick-key "inline images"))
+ :states '(normal motion)
+ "g" '(:ignore t :which-key "goto"))
+
+(general-define-key
+ :states '(normal motion)
+ :prefix "g"
+ "e" 'consult-compile-error
+ "l" 'consult-goto-line)
+
+(general-define-key
+ :states '(normal motion)
+ "M-C-'" 'consult-register-load
+ "M-'" 'consult-register-store
+ "M-\"" 'consult-register)
+
+(general-define-key
+ :states '(normal motion)
+ "g w" '(hop-word :which-key "goto word")
+ "g c" '(hop-char :which-key "goto char"))
+
+(aadi/leader-keys
+  :states '(normal motion)
+  "b" '(:ignore t :which-key "buffer")
+  "b b" 'consult-buffer
+  "b B" 'bookmark-bmenu-list
+  "b k" 'kill-this-buffer)
+
+(general-define-key
+ :states '(normal motion)
+ "C-c a" 'org-capture)
+(general-define-key
+ :keymaps 'org-mode-map
+ :states 'normal
+ "<RET>" '+org/dwim-at-point
+ "?\t" 'org-cycle
+ "C-c a" 'link-hint-copy-link-at-point
+ "z i" '(org-toggle-inline-images :whick-key "inline images"))
 
 (aadi/leader-keys org-mode-map
-    "m" '(:ignore t :which-key "org localleader")
-    "a" 'my-denote-move-from-todo-to-archive)
+  "m" '(:ignore t :which-key "org localleader")
+  "a" 'my-denote-move-from-todo-to-archive)
 (aadi/leader-local-keys org-mode-map
-    "h" '(:ignore t :which-key "heading")
-    "h h" 'consult-org-heading
-    "l" '(:ignore t :which-key "link")
-    "l c" 'org-cliplink)
+  "h" '(:ignore t :which-key "heading")
+  "h h" 'consult-org-heading
+  "l" '(:ignore t :which-key "link")
+  "l c" 'org-cliplink)
 
 (aadi/leader-local-keys
-    :keymaps 'rustic-mode-map
-    "z" 'Competitive-coding-output-input-toggle
-    "r" 'rust-reset
-    "i" 'code-input-refresh
-    "f" 'copy-current-file
-    "c" 'smart-compile)
+  :keymaps 'rustic-mode-map
+  "z" 'Competitive-coding-output-input-toggle
+  "r" 'rust-reset
+  "i" 'code-input-refresh
+  "f" 'copy-current-file
+  "c" 'smart-compile)
 
 (general-define-key
-    :states '(normal emacs visual)
-    "z" '(:ignore t :which-key "fold")
-    "z z" 'ts-fold-toggle
-    "z r" 'ts-fold-open-recursively
-    "z c" 'ts-fold-close-all
-    "z o" 'ts-fold-open-all)
+ :states '(normal emacs visual)
+ "z" '(:ignore t :which-key "fold")
+ "z z" 'ts-fold-toggle
+ "z r" 'ts-fold-open-recursively
+ "z c" 'ts-fold-close-all
+ "z o" 'ts-fold-open-all)
 
 (general-define-key
-   :prefix "C-h"
-   "f" 'helpful-callable
-   "v" 'helpful-variable
-   "k" 'helpful-key
-   "F" 'helpful-function
-   "C" 'helpful-command)
+ :prefix "C-h"
+ "f" 'helpful-callable
+ "v" 'helpful-variable
+ "k" 'helpful-key
+ "F" 'helpful-function
+ "C" 'helpful-command)
 
 (general-define-key
-   :states 'insert
-   "C-s" 'tempel-complete)
+ :states 'insert
+ "C-s" 'tempel-complete)
 (general-define-key
-   :states '(insert normal)
-   :keymaps 'tempel-map
-   "S-TAB" 'tempel-previous
-   "TAB" 'tempel-next)
+ :states '(insert normal)
+ :keymaps 'tempel-map
+ "S-TAB" 'tempel-previous
+ "TAB" 'tempel-next)
 
 (aadi/leader-keys eglot-mode-map
-    "m" '(:ignore t :which-key "eglot localleader"))
+  "m" '(:ignore t :which-key "eglot localleader"))
 (aadi/leader-local-keys eglot-mode-map
- "a" 'eglot-format)
-
-;; (use-package pcre
-;;   :elpaca (pcre :host github :repo "syohex/emacs-pcre"
-;;                 :pre-build ("make" "all")
-;;                 :files (:default "pcre.el" "pcre-core.so")))
-;; (use-package hop
-;;   :elpaca (hop :host github :repo "Animeshz/hop.el"))
+  "a" 'eglot-format)
