@@ -174,7 +174,7 @@ If on a:
 
         (`paragraph
          (+org/mark-org-checkbox-to-next-symbol)
-         (+org--toggle-inline-iages-in-subtree))
+         (+org--toggle-inline-images-in-subtree))
 
         ((guard (org-element-property :checkbox (org-element-lineage context '(item) t)))
          (+org/mark-org-checkbox-to-next-symbol))

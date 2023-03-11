@@ -440,7 +440,7 @@ A package which integrates into emacs keep undo history
 #+begin_src emacs-lisp
 (use-package undo-tree
   :config
-  (setq undo-tree-history-directory-alist '(("." . (concat user-emacs-directory "undotree")))
+  (setq undo-tree-history-directory-alist `(("." . ,(concat user-emacs-directory "undotree")))
         undo-tree-visualizer-diff t
         undo-tree-auto-save-history t)
   (global-undo-tree-mode))
@@ -464,7 +464,7 @@ Emacs keybindings are OK but i am a vimmer
   (setq evil-undo-system 'undo-tree)
   :config
   (evil-mode 1))
-  (setq evil-move-cursor-back nil
+(setq evil-move-cursor-back nil
       evil-want-fine-undo t
       evil-move-beyond-eol t
       evil-respect-visual-line-mode t         ;; I don't know why this does not work and keep the visual selection after one indentation
@@ -472,9 +472,9 @@ Emacs keybindings are OK but i am a vimmer
       evil-search-module 'evil-search
       evil-vsplit-window-right t
       evil-split-window-below t)
-  (with-eval-after-load 'evil
-    (with-eval-after-load 'elpaca-ui (evil-make-intercept-map elpaca-ui-mode-map))
-    (with-eval-after-load 'elpaca-info (evil-make-intercept-map elpaca-info-mode-map)))
+(with-eval-after-load 'evil
+  (with-eval-after-load 'elpaca-ui (evil-make-intercept-map elpaca-ui-mode-map))
+  (with-eval-after-load 'elpaca-info (evil-make-intercept-map elpaca-info-mode-map)))
 #+end_src
 *** General
 I don't want to write define-key multile times also it allows me to set keybindings in evil mode.
@@ -557,8 +557,8 @@ Quickly jump to any chracter in the visible buffer area `area you can see on scr
 (use-package pcre
   ;; :straight if you use stright.el
   :elpaca (pcre :host github :repo "syohex/emacs-pcre"
-                  :pre-build ("make" "all")
-                  :files (:default "pcre.el" "pcre-core.so")))
+                :pre-build ("make" "all")
+                :files (:default "pcre.el" "pcre-core.so")))
 (use-package hop
   :elpaca (hop :host github :repo "Animeshz/hop.el"))
 #+end_src
@@ -619,10 +619,10 @@ Everyone forgets keybindings
 High contrast theme
 #+begin_src emacs-lisp
 (use-package modus-themes
-   :config
-   (setq modus-themes-italic-constructs t
-         modus-themes-bold-constructs t)
-   (load-theme 'modus-vivendi-tinted t))
+  :config
+  (setq modus-themes-italic-constructs t
+        modus-themes-bold-constructs t)
+  (load-theme 'modus-vivendi-tinted t))
 #+end_src
 *** Doom modeline
 Changing the default modeline to a better one ( in my opinion )
@@ -1195,7 +1195,7 @@ Remove this block with you are using straight.el
 (general-define-key
  :states 'motion
  "K" 'helpful-at-point
- "S-/" '(consult-line :which-key "filter buffer")
+ "?" '(consult-line :which-key "filter buffer")
  "M-/" 'evilnc-comment-or-uncomment-lines)
 #+end_src
 ** Custom Function Map

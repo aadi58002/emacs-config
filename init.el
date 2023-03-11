@@ -267,7 +267,8 @@
 
 (use-package undo-tree
   :config
-  (setq undo-tree-visualizer-diff t
+  (setq undo-tree-history-directory-alist `(("." . ,(concat user-emacs-directory "undotree")))
+        undo-tree-visualizer-diff t
         undo-tree-auto-save-history t)
   (global-undo-tree-mode))
 
@@ -283,7 +284,7 @@
   (setq evil-undo-system 'undo-tree)
   :config
   (evil-mode 1))
-  (setq evil-move-cursor-back nil
+(setq evil-move-cursor-back nil
       evil-want-fine-undo t
       evil-move-beyond-eol t
       evil-respect-visual-line-mode t         ;; I don't know why this does not work and keep the visual selection after one indentation
@@ -291,9 +292,9 @@
       evil-search-module 'evil-search
       evil-vsplit-window-right t
       evil-split-window-below t)
-  (with-eval-after-load 'evil
-    (with-eval-after-load 'elpaca-ui (evil-make-intercept-map elpaca-ui-mode-map))
-    (with-eval-after-load 'elpaca-info (evil-make-intercept-map elpaca-info-mode-map)))
+(with-eval-after-load 'evil
+  (with-eval-after-load 'elpaca-ui (evil-make-intercept-map elpaca-ui-mode-map))
+  (with-eval-after-load 'elpaca-info (evil-make-intercept-map elpaca-info-mode-map)))
 
 (use-package general
   :config
@@ -343,8 +344,8 @@
 (use-package pcre
   ;; :straight if you use stright.el
   :elpaca (pcre :host github :repo "syohex/emacs-pcre"
-                  :pre-build ("make" "all")
-                  :files (:default "pcre.el" "pcre-core.so")))
+                :pre-build ("make" "all")
+                :files (:default "pcre.el" "pcre-core.so")))
 (use-package hop
   :elpaca (hop :host github :repo "Animeshz/hop.el"))
 
@@ -390,10 +391,10 @@
   (which-key-mode))
 
 (use-package modus-themes
-   :config
-   (setq modus-themes-italic-constructs t
-         modus-themes-bold-constructs t)
-   (load-theme 'modus-vivendi-tinted t))
+  :config
+  (setq modus-themes-italic-constructs t
+        modus-themes-bold-constructs t)
+  (load-theme 'modus-vivendi-tinted t))
 
 (use-package doom-modeline
   :init (doom-modeline-mode 1)
@@ -872,7 +873,7 @@
 (general-define-key
  :states 'motion
  "K" 'helpful-at-point
- "S-/" '(consult-line :which-key "filter buffer")
+ "?" '(consult-line :which-key "filter buffer")
  "M-/" 'evilnc-comment-or-uncomment-lines)
 
 (general-define-key

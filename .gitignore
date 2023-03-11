@@ -6,6 +6,7 @@ straight/
 elpaca/
 transient/
 bookmarks
+undotree/
 undohist/
 .gitignore
 .lsp-session-v1
