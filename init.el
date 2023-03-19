@@ -64,9 +64,9 @@
 
 (autoload #'+org/dwim-at-point (concat user-emacs-directory "autoload/+org"))
 
-(setq-default show-trailing-whitespace t)
-(add-hook 'prog-mode-hook
-          (lambda () (font-lock-add-keywords nil '(("\\s-+$" 0 'trailing-whitespace)))))
+;; (setq-default show-trailing-whitespace t)
+;; (add-hook 'prog-mode-hook
+;;           (lambda () (font-lock-add-keywords nil '(("\\s-+$" 0 'trailing-whitespace)))))
 
 (defun my/backward-kill-word ()
   "Kill backward to the beginning of the current word, but do not cross lines."
@@ -205,7 +205,7 @@
   (interactive)
   (start-process "kitty" nil "setsid" "kitty" "-d" default-directory))
 
-(defvar elpaca-installer-version 0.2)
+(defvar elpaca-installer-version 0.3)
 (defvar elpaca-directory (expand-file-name "elpaca/" user-emacs-directory))
 (defvar elpaca-builds-directory (expand-file-name "builds/" elpaca-directory))
 (defvar elpaca-repos-directory (expand-file-name "repos/" elpaca-directory))
@@ -297,6 +297,7 @@
   (with-eval-after-load 'elpaca-info (evil-make-intercept-map elpaca-info-mode-map)))
 
 (use-package general
+  :after (evil)
   :config
   (general-override-mode)
   (general-auto-unbind-keys)
@@ -390,11 +391,30 @@
   :init
   (which-key-mode))
 
-(use-package modus-themes
+(use-package doom-themes
   :config
-  (setq modus-themes-italic-constructs t
-        modus-themes-bold-constructs t)
-  (load-theme 'modus-vivendi-tinted t))
+  (setq doom-themes-enable-bold t
+        doom-themes-enable-italic t)
+  (doom-themes-visual-bell-config)
+
+  (load-theme 'doom-dracula t)
+  (add-hook 'server-after-make-frame-functions
+            (lambda (frame)
+              (with-selected-frame frame
+                (load-theme 'doom-dracula t))))
+  (custom-set-faces
+   '(doom-themes-visual-bell ((t (:background "#00FFFF"))))
+   '(emms-playlist-selected-face ((t (:foreground "royal blue"))))
+   '(emms-playlist-track-face ((t (:foreground "#5da3e7"))))
+   '(emms-playlist-selected-face ((t (:foreground "royal blue"))))
+   '(emms-playlist-track-face ((t (:foreground "#5da3e7"))))
+   '(org-ellipsis (( t(:foreground "#C678DD"))))))
+
+;; (use-package modus-themes
+;;   :config
+;;   (setq modus-themes-italic-constructs t
+;;         modus-themes-bold-constructs t)
+;;   (load-theme 'modus-vivendi-tinted t))
 
 (use-package doom-modeline
   :init (doom-modeline-mode 1)
@@ -428,41 +448,51 @@
 
 ;; Best programming language so we need to include it
 (use-package rustic
+  :after (lsp-mode)
   :config
-  (setq rustic-enable-detached-file-support t)
-  (setq rustic-lsp-client 'eglot))
-
-(use-package eldoc-box
-  :config
-  (setq eldoc-echo-area-use-multiline-p nil))
+  (setq rustic-enable-detached-file-support t))
 
 (use-package flycheck
   :config
   (global-flycheck-mode 1))
-(use-package flycheck-eglot
-  :after (flycheck eglot)
+
+(use-package lsp-mode
+  :custom
+  (lsp-completion-provider :none) ;; we use Corfu!
+  :init
+  (defun my/lsp-mode-setup-completion ()
+    (setf (alist-get 'styles (alist-get 'lsp-capf completion-category-defaults))
+          '(flex))) ;; Configure flex
+  :hook
+  (lsp-completion-mode . my/lsp-mode-setup-completion)
   :config
-  (global-flycheck-eglot-mode 1))
-(use-package eglot
-  :after (eldoc-box)
-  :hook ((prog-mode . eglot-ensure))
+  ;; Rust
+  (setq lsp-rust-clippy-preference "on"
+        lsp-rust-analyzer-inlay-hints-mode t
+        lsp-rust-analyzer-binding-mode-hints t
+        lsp-rust-analyzer-display-chaining-hints t
+        lsp-rust-analyzer-display-parameter-hints t
+        lsp-rust-analyzer-server-display-inlay-hints t
+        lsp-rust-analyzer-display-lifetime-elision-hints-enable t
+        lsp-rust-analyzer-display-lifetime-elision-hints-use-parameter-names t))
+
+(use-package lsp-ui
   :config
-  (setq completion-category-overrides '((eglot (styles orderless))))
-  (setq eldoc-idle-delay 0.0
-        eglot-events-buffer-size 0
-        flymake-no-changes-timeout 0.5
-        eglot-autoshutdown t)
-  (add-hook 'eglot-managed-mode-hook #'eldoc-box-hover-mode t)
-  (add-hook 'eglot-managed-mode-hook
-            (lambda ()
-              "Make sure Eldoc will show us all of the feedback at point."
-              (setq-local eldoc-documentation-strategy
-                          #'eldoc-documentation-compose)))
-  (add-to-list 'eglot-ignored-server-capabilities :hoverProvider)
-  (add-to-list 'eglot-server-programs '(svelte-mode . ("svelteserver" "--stdio")))
-  (add-to-list 'eglot-server-programs `((c-mode c-ts-mode c++-mode c++-ts-mode)
-                                        . ,(eglot-alternatives
-                                            '("ccls" "clangd")))))
+  (setq lsp-ui-sideline-show-diagnostics t  
+        lsp-ui-sideline-update-mode #'line
+        lsp-ui-sideline-show-code-actions t
+        lsp-ui-peek-enable t
+        lsp-ui-peek-show-directory t
+        lsp-enable-symbol-highlighting t
+        lsp-headerline-breadcrumb-enable t
+        lsp-lens-enable t
+        lsp-ui-doc-enable t
+        lsp-ui-doc-position 'at-point
+        lsp-modeline-code-actions-enable t
+        lsp-completion-show-detail t
+        lsp-completion-show-kind t)
+  (define-key lsp-ui-mode-map [remap xref-find-definitions] #'lsp-ui-peek-find-definitions)
+  (define-key lsp-ui-mode-map [remap xref-find-references] #'lsp-ui-peek-find-references))
 
 (use-package typescript-mode
   :after tree-sitter
@@ -482,10 +512,7 @@
   :config
   (setq web-mode-markup-indent-offset 2
         web-mode-code-indent-offset 2
-        web-mode-css-indent-offset 2)
-  ;; Svelte Mode
-  (add-to-list 'auto-mode-alist '("\\.svelte\\'" . web-mode))
-  (setq web-mode-engines-alist '(("svelte" . "\\.svelte\\'"))))
+        web-mode-css-indent-offset 2))
 
 (use-package tree-sitter
   :config
@@ -840,11 +867,11 @@
 (if (fboundp 'elpaca-wait)(elpaca-wait))
 
 (general-create-definer aadi/leader-keys
-  :states '(normal hybrid motion visual operator emacs)
+  :states '(normal motion visual operator emacs)
   :keymaps '(override global local)
   :prefix "SPC")
 (general-create-definer aadi/leader-local-keys
-  :states '(normal visual emacs)
+  :states '(normal motion visual operator emacs)
   :keymaps '(override global local)
   :prefix "SPC m")
 
@@ -861,7 +888,7 @@
  "C-S-v" 'evil-paste-after)
 
 (general-define-key
- :states '(normal motion visual operator emacs)
+ :states '(normal motion operator emacs)
  :keymaps '(local global)
 
  "H" 'evil-beginning-of-line
@@ -889,7 +916,7 @@
 
 (general-define-key
  :keymaps 'dashboard-mode-map
- :states '(normal visual emacs)
+ :states '(normal emacs)
  "RET" 'dashboard-return)
 
 (general-define-key
@@ -1000,7 +1027,7 @@
   "c" 'smart-compile)
 
 (general-define-key
- :states '(normal emacs visual)
+ :states '(normal emacs)
  "z" '(:ignore t :which-key "fold")
  "z z" 'ts-fold-toggle
  "z r" 'ts-fold-open-recursively
@@ -1024,7 +1051,7 @@
  "S-TAB" 'tempel-previous
  "TAB" 'tempel-next)
 
-(aadi/leader-keys eglot-mode-map
-  "m" '(:ignore t :which-key "eglot localleader"))
-(aadi/leader-local-keys eglot-mode-map
-  "a" 'eglot-format)
+(aadi/leader-keys lsp-mode-map
+  "m" '(:ignore t :which-key "lsp localleader"))
+(aadi/leader-local-keys lsp-mode-map
+  "a" 'lsp-format-buffer)

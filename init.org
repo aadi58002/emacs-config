@@ -65,6 +65,8 @@ Stopping Some modules which i don't use from being loaded like menu-bar-mode,too
 (menu-bar-mode -1)
 (tool-bar-mode -1)
 (scroll-bar-mode -1)
+(setq scroll-conservatively 200
+      scroll-margin 3)
 
 ;; Give the frame basic coloring while waiting for the theme to load. The main
 ;; purpose of this is to not blind me when it's dark by flashing a screen full
@@ -196,9 +198,9 @@ Setting some default which suit well for me as well as enabling some performance
 #+end_src
 *** Trailing whitespace
 #+begin_src emacs-lisp
-(setq-default show-trailing-whitespace t)
-(add-hook 'prog-mode-hook
-          (lambda () (font-lock-add-keywords nil '(("\\s-+$" 0 'trailing-whitespace)))))
+;; (setq-default show-trailing-whitespace t)
+;; (add-hook 'prog-mode-hook
+;;           (lambda () (font-lock-add-keywords nil '(("\\s-+$" 0 'trailing-whitespace)))))
 #+end_src
 *** Backspace
 #+begin_src emacs-lisp
@@ -365,7 +367,7 @@ Start a kitty terminal session where the emacs current file (works with open dir
 Elpaca package manager which support async install of packages for faster install.
 It is in actively developing emacs package manager but it is not widely documented like straight.el or package.el by default.
 #+begin_src emacs-lisp
-(defvar elpaca-installer-version 0.2)
+(defvar elpaca-installer-version 0.3)
 (defvar elpaca-directory (expand-file-name "elpaca/" user-emacs-directory))
 (defvar elpaca-builds-directory (expand-file-name "builds/" elpaca-directory))
 (defvar elpaca-repos-directory (expand-file-name "repos/" elpaca-directory))
@@ -480,6 +482,7 @@ Emacs keybindings are OK but i am a vimmer
 I don't want to write define-key multile times also it allows me to set keybindings in evil mode.
 #+begin_src emacs-lisp
 (use-package general
+  :after (evil)
   :config
   (general-override-mode)
   (general-auto-unbind-keys)
@@ -615,19 +618,41 @@ Everyone forgets keybindings
   (which-key-mode))
 #+end_src
 *** Theme
+**** Doom themes
+#+begin_src emacs-lisp
+(use-package doom-themes
+  :config
+  (setq doom-themes-enable-bold t
+        doom-themes-enable-italic t)
+  (doom-themes-visual-bell-config)
+
+  (load-theme 'doom-dracula t)
+  (add-hook 'server-after-make-frame-functions
+            (lambda (frame)
+              (with-selected-frame frame
+                (load-theme 'doom-dracula t))))
+  (custom-set-faces
+   '(doom-themes-visual-bell ((t (:background "#00FFFF"))))
+   '(emms-playlist-selected-face ((t (:foreground "royal blue"))))
+   '(emms-playlist-track-face ((t (:foreground "#5da3e7"))))
+   '(emms-playlist-selected-face ((t (:foreground "royal blue"))))
+   '(emms-playlist-track-face ((t (:foreground "#5da3e7"))))
+   '(org-ellipsis (( t(:foreground "#C678DD"))))))
+#+end_src
 **** Modus theme
 High contrast theme
 #+begin_src emacs-lisp
-(use-package modus-themes
-  :config
-  (setq modus-themes-italic-constructs t
-        modus-themes-bold-constructs t)
-  (load-theme 'modus-vivendi-tinted t))
+;; (use-package modus-themes
+;;   :config
+;;   (setq modus-themes-italic-constructs t
+;;         modus-themes-bold-constructs t)
+;;   (load-theme 'modus-vivendi-tinted t))
 #+end_src
 *** Doom modeline
 Changing the default modeline to a better one ( in my opinion )
 #+begin_src emacs-lisp
 (use-package doom-modeline
+  :elpaca (doom-modeline :host github :repo "seagle0128/doom-modeline")
   :init (doom-modeline-mode 1)
   :config
   (display-battery-mode 1)
@@ -699,7 +724,7 @@ Smart commentor for most of the languages
   :config
   (setq completion-category-overrides '((eglot (styles orderless))))
   (setq eldoc-idle-delay 0.0
-        eglot-events-buffer-size 0
+        ;; eglot-events-buffer-size 0
         flymake-no-changes-timeout 0.5
         eglot-autoshutdown t)
   (add-hook 'eglot-managed-mode-hook #'eldoc-box-hover-mode t)
@@ -709,6 +734,7 @@ Smart commentor for most of the languages
               (setq-local eldoc-documentation-strategy
                           #'eldoc-documentation-compose)))
   (add-to-list 'eglot-ignored-server-capabilities :hoverProvider)
+  (add-to-list 'eglot-server-programs '((python-mode python-ts-mode) . ("pyright-langserver" "--stdio")))
   (add-to-list 'eglot-server-programs '(svelte-mode . ("svelteserver" "--stdio")))
   (add-to-list 'eglot-server-programs `((c-mode c-ts-mode c++-mode c++-ts-mode)
                                         . ,(eglot-alternatives
@@ -738,10 +764,7 @@ I still have not worked out typescript support with tsx and jsx file completion 
   :config
   (setq web-mode-markup-indent-offset 2
         web-mode-code-indent-offset 2
-        web-mode-css-indent-offset 2)
-  ;; Svelte Mode
-  (add-to-list 'auto-mode-alist '("\\.svelte\\'" . web-mode))
-  (setq web-mode-engines-alist '(("svelte" . "\\.svelte\\'"))))
+        web-mode-css-indent-offset 2))
 #+end_src
 *** Tree sitter
 #+begin_src emacs-lisp
@@ -819,7 +842,7 @@ It has some performace issues with corfu you can use company-mode and company-bo
   ;; Setup corfu for popup like completion
   (setq corfu-cycle t  ; Allows cycling through candidates
         corfu-auto t   ; Enable auto completion
-        corfu-auto-prefix 0  ; Complete with less prefix keys
+        corfu-auto-prefix 1  ; Complete with less prefix keys
         corfu-auto-delay 0.0  ; No delay for completion
         corfu-echo-documentation t ; Echo docs for current completion option
         corfu-popupinfo-delay 0.0
@@ -1160,11 +1183,11 @@ Remove this block with you are using straight.el
 ** Leader key definer definations
 #+begin_src emacs-lisp
 (general-create-definer aadi/leader-keys
-  :states '(normal hybrid motion visual operator emacs)
+  :states '(normal motion visual operator emacs)
   :keymaps '(override global local)
   :prefix "SPC")
 (general-create-definer aadi/leader-local-keys
-  :states '(normal visual emacs)
+  :states '(normal motion visual operator emacs)
   :keymaps '(override global local)
   :prefix "SPC m")
 #+end_src
@@ -1183,7 +1206,7 @@ Remove this block with you are using straight.el
  "C-S-v" 'evil-paste-after)
 
 (general-define-key
- :states '(normal motion visual operator emacs)
+ :states '(normal motion operator emacs)
  :keymaps '(local global)
 
  "H" 'evil-beginning-of-line
@@ -1217,7 +1240,7 @@ Remove this block with you are using straight.el
 #+begin_src emacs-lisp
 (general-define-key
  :keymaps 'dashboard-mode-map
- :states '(normal visual emacs)
+ :states '(normal emacs)
  "RET" 'dashboard-return)
 #+end_src
 ** Magit Map
@@ -1357,7 +1380,7 @@ Remove this block with you are using straight.el
 ** Fold
 #+begin_src emacs-lisp
 (general-define-key
- :states '(normal emacs visual)
+ :states '(normal emacs)
  "z" '(:ignore t :which-key "fold")
  "z z" 'ts-fold-toggle
  "z r" 'ts-fold-open-recursively
@@ -1391,5 +1414,4 @@ Remove this block with you are using straight.el
   "m" '(:ignore t :which-key "eglot localleader"))
 (aadi/leader-local-keys eglot-mode-map
   "a" 'eglot-format)
-#+end_src
 #+end_src
