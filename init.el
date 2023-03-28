@@ -321,8 +321,8 @@
 
 (use-package tempel-collection)
 
-(use-package ts-fold
-  :elpaca (ts-fold :type git :host github :repo "emacs-tree-sitter/ts-fold"))
+;; (use-package ts-fold
+;;   :elpaca (ts-fold :type git :host github :repo "emacs-tree-sitter/ts-fold"))
 
 (use-package emms
   :config
@@ -341,14 +341,6 @@
   (emms-add-directory-tree "~/Videos/Test Video"))
 
 (use-package helpful)
-
-(use-package pcre
-  ;; :straight if you use stright.el
-  :elpaca (pcre :host github :repo "syohex/emacs-pcre"
-                :pre-build ("make" "all")
-                :files (:default "pcre.el" "pcre-core.so")))
-(use-package hop
-  :elpaca (hop :host github :repo "Animeshz/hop.el"))
 
 (use-package unicode-fonts)
 
@@ -417,6 +409,7 @@
 ;;   (load-theme 'modus-vivendi-tinted t))
 
 (use-package doom-modeline
+  :elpaca (doom-modeline :host github :repo "seagle0128/doom-modeline")
   :init (doom-modeline-mode 1)
   :config
   (display-battery-mode 1)
@@ -448,54 +441,78 @@
 
 ;; Best programming language so we need to include it
 (use-package rustic
-  :after (lsp-mode)
   :config
-  (setq rustic-enable-detached-file-support t))
+  (setq rustic-enable-detached-file-support t)
+  (setq rustic-lsp-client 'eglot))
+
+(use-package eldoc-box
+  :config
+  (setq eldoc-echo-area-use-multiline-p nil))
 
 (use-package flycheck
   :config
   (global-flycheck-mode 1))
 
-(use-package lsp-mode
-  :custom
-  (lsp-completion-provider :none) ;; we use Corfu!
-  :init
-  (defun my/lsp-mode-setup-completion ()
-    (setf (alist-get 'styles (alist-get 'lsp-capf completion-category-defaults))
-          '(flex))) ;; Configure flex
-  :hook
-  (lsp-completion-mode . my/lsp-mode-setup-completion)
+(use-package flycheck-eglot
+  :after (flycheck eglot)
   :config
-  ;; Rust
-  (setq lsp-rust-clippy-preference "on"
-        lsp-rust-analyzer-inlay-hints-mode t
-        lsp-rust-analyzer-binding-mode-hints t
-        lsp-rust-analyzer-display-chaining-hints t
-        lsp-rust-analyzer-display-parameter-hints t
-        lsp-rust-analyzer-server-display-inlay-hints t
-        lsp-rust-analyzer-display-lifetime-elision-hints-enable t
-        lsp-rust-analyzer-display-lifetime-elision-hints-use-parameter-names t))
+  (global-flycheck-eglot-mode 1))
 
-(use-package lsp-ui
+
+(use-package eglot
+  :elpaca (eglot :host github :repo "joaotavora/eglot")
+  :after (eldoc-box)
+  :hook ((prog-mode . eglot-ensure))
   :config
-  (setq lsp-ui-sideline-show-diagnostics t  
-        lsp-ui-sideline-update-mode #'line
-        lsp-ui-sideline-show-code-actions t
-        lsp-ui-peek-enable t
-        lsp-ui-peek-show-directory t
-        lsp-enable-symbol-highlighting t
-        lsp-headerline-breadcrumb-enable t
-        lsp-lens-enable t
-        lsp-ui-doc-enable t
-        lsp-ui-doc-position 'at-point
-        lsp-modeline-code-actions-enable t
-        lsp-completion-show-detail t
-        lsp-completion-show-kind t)
-  (define-key lsp-ui-mode-map [remap xref-find-definitions] #'lsp-ui-peek-find-definitions)
-  (define-key lsp-ui-mode-map [remap xref-find-references] #'lsp-ui-peek-find-references))
+  (setq completion-category-overrides '((eglot (styles orderless))))
+  (setq eldoc-idle-delay 0.3
+        eglot-events-buffer-size 0
+        flymake-no-changes-timeout 0.5
+        eglot-autoshutdown t)
+  (add-hook 'eglot-managed-mode-hook #'eldoc-box-hover-mode t)
+  (add-hook 'eglot-managed-mode-hook
+            (lambda ()
+              "Make sure Eldoc will show us all of the feedback at point."
+              (setq-local eldoc-documentation-strategy
+                          #'eldoc-documentation-compose)))
+
+  ;; Yaml mode 
+  (add-to-list 'auto-mode-alist '("\\.yml\\'" . yaml-ts-mode))
+  (add-to-list 'auto-mode-alist '("\\.yaml\\'" . yaml-ts-mode))
+
+  (add-to-list 'eglot-ignored-server-capabilities :hoverProvider)
+  (add-to-list 'eglot-server-programs '(svelte-mode . ("svelteserver" "--stdio")))
+  (add-to-list 'eglot-server-programs `((c-mode c-ts-mode c++-mode c++-ts-mode)
+                                        . ,(eglot-alternatives
+                                            '("ccls" "clangd"))))
+  ;; web-mode setup
+  (define-derived-mode vue-mode web-mode "Vue")
+  (add-to-list 'auto-mode-alist '("\\.vue\\'" . vue-mode))
+  
+  (defun vue-eglot-init-options ()
+               (let ((tsdk-path (expand-file-name
+                                 "lib"
+                                 (shell-command-to-string "npm list --global --parseable typescript | head -n1 | tr -d \"\n\""))))
+                 `(:typescript (:tsdk ,tsdk-path
+                                :languageFeatures (:completion
+                                                   (:defaultTagNameCase "both"
+                                                    :defaultAttrNameCase "kebabCase"
+                                                    :getDocumentNameCasesRequest nil
+                                                    :getDocumentSelectionRequest nil)
+                                                   :diagnostics
+                                                   (:getDocumentVersionRequest nil))
+                                :documentFeatures (:documentFormatting
+                                                   (:defaultPrintWidth 100
+                                                    :getDocumentPrintWidthRequest nil)
+                                                   :documentSymbol t
+                                                   :documentColor t)))))
+  
+  ;; Volar
+  (add-to-list 'eglot-server-programs
+                          `(vue-mode . ("vue-language-server" "--stdio" :initializationOptions ,(vue-eglot-init-options)))))
 
 (use-package typescript-mode
-  :after tree-sitter
+  :after treesit
   :config
   ;; we choose this instead of tsx-mode so that eglot can automatically figure out language for server
   ;; see https://github.com/joaotavora/eglot/issues/624 and https://github.com/joaotavora/eglot#handling-quirky-servers
@@ -503,10 +520,10 @@
     "TypeScript TSX")
 
   ;; use our derived mode for tsx files
-  (add-to-list 'auto-mode-alist '("\\.tsx?\\'" . typescriptreact-mode))
+  (add-to-list 'auto-mode-alist '("\\.tsx?\\'" . typescriptreact-mode)))
   ;; by default, typescript-mode is mapped to the treesitter typescript parser
   ;; use our derived mode to map both .tsx AND .ts -> typescriptreact-mode -> treesitter tsx
-  (add-to-list 'tree-sitter-major-mode-language-alist '(typescriptreact-mode . tsx)))
+  ;; (add-to-list 'tree-sitter-major-mode-language-alist '(typescriptreact-mode . tsx)))
 
 (use-package web-mode
   :config
@@ -514,16 +531,23 @@
         web-mode-code-indent-offset 2
         web-mode-css-indent-offset 2))
 
-(use-package tree-sitter
-  :config
-  (global-tree-sitter-mode))
+(use-package treesit
+  :elpaca nil)
 
-(use-package tree-sitter-langs
+(use-package treesit-auto
   :config
-  ;; This makes every node a link to a section of code
-  (setq tree-sitter-debug-jump-buttons t
-        ;; and this highlights the entire sub tree in your code
-        tree-sitter-debug-highlight-jump-region t))
+  (global-treesit-auto-mode))
+
+(use-package combobulate
+   :elpaca (combobulate :host github :repo "mickeynp/combobulate")
+   :after treesit)
+
+;; (use-package tree-sitter-langs
+;;   :config
+;;   ;; This makes every node a link to a section of code
+;;   (setq tree-sitter-debug-jump-buttons t
+;;         ;; and this highlights the entire sub tree in your code
+;;         tree-sitter-debug-highlight-jump-region t))
 
 (use-package magit
   :config
@@ -565,10 +589,10 @@
   ;; Setup corfu for popup like completion
   (setq corfu-cycle t  ; Allows cycling through candidates
         corfu-auto t   ; Enable auto completion
-        corfu-auto-prefix 0  ; Complete with less prefix keys
-        corfu-auto-delay 0.0  ; No delay for completion
+        corfu-auto-prefix 1  ; Complete with less prefix keys
+        corfu-auto-delay 0.3  ; No delay for completion
         corfu-echo-documentation t ; Echo docs for current completion option
-        corfu-popupinfo-delay 0.0
+        corfu-popupinfo-delay 0.3
         corfu-quit-no-match 'separator
         corfu-quit-at-boundary 'insert)
 
@@ -986,11 +1010,6 @@
  "M-'" 'consult-register-store
  "M-\"" 'consult-register)
 
-(general-define-key
- :states '(normal motion)
- "g w" '(hop-word :which-key "goto word")
- "g c" '(hop-char :which-key "goto char"))
-
 (aadi/leader-keys
   :states '(normal motion)
   "b" '(:ignore t :which-key "buffer")
@@ -1027,14 +1046,6 @@
   "c" 'smart-compile)
 
 (general-define-key
- :states '(normal emacs)
- "z" '(:ignore t :which-key "fold")
- "z z" 'ts-fold-toggle
- "z r" 'ts-fold-open-recursively
- "z c" 'ts-fold-close-all
- "z o" 'ts-fold-open-all)
-
-(general-define-key
  :prefix "C-h"
  "f" 'helpful-callable
  "v" 'helpful-variable
@@ -1051,7 +1062,7 @@
  "S-TAB" 'tempel-previous
  "TAB" 'tempel-next)
 
-(aadi/leader-keys lsp-mode-map
-  "m" '(:ignore t :which-key "lsp localleader"))
-(aadi/leader-local-keys lsp-mode-map
-  "a" 'lsp-format-buffer)
+(aadi/leader-keys eglot-mode-map
+  "m" '(:ignore t :which-key "eglot localleader"))
+(aadi/leader-local-keys eglot-mode-map
+  "a" 'eglot-format)
