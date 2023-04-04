@@ -178,8 +178,7 @@
   (interactive)
   (widen)
   (erase-buffer)
-  (tempel-insert 'chef)
-  (narrow-to-defun))
+  (tempel-insert 'cp))
 
 (defun code-input-refresh()
   ;; Places the clipboard content in the inputf.in file with the `SPC m i` Keybinding in rust-mode
@@ -327,18 +326,16 @@
 (use-package emms
   :config
   (emms-all)
-  (setq emms-source-file-default-directory "~/Music/"
-        emms-info-functions '(emms-info-native)
-        emms-player-list '(emms-player-mpv)
+  (emms-player-mpd-connect)
+  (setq emms-info-functions '(emms-info-mpd)
+        emms-player-list '(emms-player-mpd)
         emms-history-file nil
         emms-repeat-track t
         emms-mode-line-mode t
         emms-playlist-buffer-name "*Music*"
         emms-playing-time-mode t
         emms-info-asynchronously t
-        emms-source-file-directory-tree-function 'emms-source-file-directory-tree-find)
-  (emms-add-directory-tree "~/Music/")
-  (emms-add-directory-tree "~/Videos/Test Video"))
+        emms-source-file-directory-tree-function 'emms-source-file-directory-tree-find))
 
 (use-package helpful)
 

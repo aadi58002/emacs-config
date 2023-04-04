@@ -325,8 +325,7 @@ With smart-compile this function is very useful to run multiple test cases with 
   (interactive)
   (widen)
   (erase-buffer)
-  (tempel-insert 'chef)
-  (narrow-to-defun))
+  (tempel-insert 'cp))
 #+end_src
 *** Rust paste input
 #+begin_src emacs-lisp
@@ -534,18 +533,16 @@ Music Management with emacs
 (use-package emms
   :config
   (emms-all)
-  (setq emms-source-file-default-directory "~/Music/"
-        emms-info-functions '(emms-info-native)
-        emms-player-list '(emms-player-mpv)
+  (emms-player-mpd-connect)
+  (setq emms-info-functions '(emms-info-mpd)
+        emms-player-list '(emms-player-mpd)
         emms-history-file nil
         emms-repeat-track t
         emms-mode-line-mode t
         emms-playlist-buffer-name "*Music*"
         emms-playing-time-mode t
         emms-info-asynchronously t
-        emms-source-file-directory-tree-function 'emms-source-file-directory-tree-find)
-  (emms-add-directory-tree "~/Music/")
-  (emms-add-directory-tree "~/Videos/Test Video"))
+        emms-source-file-directory-tree-function 'emms-source-file-directory-tree-find))
 #+end_src
 *** Helpful
 Better documentation of variable,function and alike in emacs
