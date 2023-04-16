@@ -245,36 +245,12 @@
 
 (if (fboundp 'elpaca-wait)(elpaca-wait))
 
-;; (defvar bootstrap-version)
-;; (let ((bootstrap-file
-;;          (expand-file-name "straight/repos/straight.el/bootstrap.el" user-emacs-directory))
-;;         (bootstrap-version 6))
-;;     (unless (file-exists-p bootstrap-file)
-;;       (with-current-buffer
-;;           (url-retrieve-synchronously
-;;            "https://raw.githubusercontent.com/radian-software/straight.el/develop/install.el"
-;;            'silent 'inhibit-cookies)
-;;         (goto-char (point-max))
-;;         (eval-print-last-sexp)))
-;;     (load bootstrap-file nil 'nomessage))
-;; (setq-default straight-vc-git-default-clone-depth '(1 single-branch))
-;; (setq straight-use-package-by-default t)
-;; (straight-use-package 'use-package)
-
-;; (let ((straight-x-file (expand-file-name "straight/repos/straight.el/straight-x.el" user-emacs-directory)))
-;;   (if (file-exists-p straight-x-file) (load straight-x-file)))
-
 (use-package undo-tree
   :config
   (setq undo-tree-history-directory-alist `(("." . ,(concat user-emacs-directory "undotree")))
         undo-tree-visualizer-diff t
         undo-tree-auto-save-history t)
   (global-undo-tree-mode))
-
-(use-package savehist
-  :elpaca nil
-  :init
-  (savehist-mode))
 
 (use-package evil
   :init
@@ -283,6 +259,7 @@
   (setq evil-undo-system 'undo-tree)
   :config
   (evil-mode 1))
+
 (setq evil-move-cursor-back nil
       evil-want-fine-undo t
       evil-move-beyond-eol t
@@ -291,6 +268,7 @@
       evil-search-module 'evil-search
       evil-vsplit-window-right t
       evil-split-window-below t)
+
 (with-eval-after-load 'evil
   (with-eval-after-load 'elpaca-ui (evil-make-intercept-map elpaca-ui-mode-map))
   (with-eval-after-load 'elpaca-info (evil-make-intercept-map elpaca-info-mode-map)))
@@ -310,32 +288,25 @@
 (use-package tramp
   :elpaca nil)
 
-(use-package pdf-tools
-  :config
-  (add-to-list 'auto-mode-alist '("\\.pdf\\'" . pdf-view-mode)))
-
 (use-package tempel
   :config
   (global-tempel-abbrev-mode))
 
 (use-package tempel-collection)
 
-;; (use-package ts-fold
-;;   :elpaca (ts-fold :type git :host github :repo "emacs-tree-sitter/ts-fold"))
-
 (use-package emms
   :config
   (emms-all)
-  (emms-player-mpd-connect)
-  (setq emms-info-functions '(emms-info-mpd)
-        emms-player-list '(emms-player-mpd)
-        emms-history-file nil
+  (setq emms-info-functions '(emms-info-native)
+        emms-player-list '(emms-player-vlc)
         emms-repeat-track t
         emms-mode-line-mode t
         emms-playlist-buffer-name "*Music*"
         emms-playing-time-mode t
         emms-info-asynchronously t
-        emms-source-file-directory-tree-function 'emms-source-file-directory-tree-find))
+        emms-source-file-directory-tree-function 'emms-source-file-directory-tree-find)
+  (emms-add-directory-tree "~/Music/")
+  (emms-add-directory-tree "~/Videos/Test Video"))
 
 (use-package helpful)
 
@@ -363,8 +334,7 @@
   :after all-the-icons
   :config
   (setq dashboard-items '((recents  . 5)
-                          (agenda . 5)
-                          (projects . 5)))
+                          (agenda . 5)))
   (setq dashboard-set-heading-icons t)
   (setq dashboard-startup-banner (random-element-of-list banner-icons-list))
   (setq dashboard-banner-logo-title "")
@@ -423,16 +393,18 @@
   (all-the-icons-completion-mode)
   (add-hook 'marginalia-mode-hook #'all-the-icons-completion-marginalia-setup))
 
-(use-package kind-icon
-  :after corfu
-  :custom
-  (kind-icon-default-face 'corfu-default) ; to compute blended backgrounds correctly
-  :config
-  (add-to-list 'corfu-margin-formatters #'kind-icon-margin-formatter))
+;; (use-package kind-icon
+;;   :after corfu
+;;   :custom
+;;   (kind-icon-default-face 'corfu-default) ; to compute blended backgrounds correctly
+;;   :config
+;;   (add-to-list 'corfu-margin-formatters #'kind-icon-margin-formatter))
 
 (use-package all-the-icons-dired
   :config
   (add-hook 'dired-mode-hook 'all-the-icons-dired-mode))
+
+;; (use-package gptel)
 
 (use-package evil-nerd-commenter)
 
@@ -458,11 +430,11 @@
 
 (use-package eglot
   :elpaca (eglot :host github :repo "joaotavora/eglot")
-  :after (eldoc-box)
+  :after (eldoc-box web-mode)
   :hook ((prog-mode . eglot-ensure))
   :config
   (setq completion-category-overrides '((eglot (styles orderless))))
-  (setq eldoc-idle-delay 0.3
+  (setq eldoc-idle-delay 0.0
         eglot-events-buffer-size 0
         flymake-no-changes-timeout 0.5
         eglot-autoshutdown t)
@@ -477,6 +449,8 @@
   (add-to-list 'auto-mode-alist '("\\.yml\\'" . yaml-ts-mode))
   (add-to-list 'auto-mode-alist '("\\.yaml\\'" . yaml-ts-mode))
 
+  (define-derived-mode svelte-mode web-mode "Svelte")
+  (add-to-list 'auto-mode-alist '("\\.svelte\\'" . svelte-mode))
   (add-to-list 'eglot-ignored-server-capabilities :hoverProvider)
   (add-to-list 'eglot-server-programs '(svelte-mode . ("svelteserver" "--stdio")))
   (add-to-list 'eglot-server-programs `((c-mode c-ts-mode c++-mode c++-ts-mode)
@@ -508,6 +482,10 @@
   (add-to-list 'eglot-server-programs
                           `(vue-mode . ("vue-language-server" "--stdio" :initializationOptions ,(vue-eglot-init-options)))))
 
+(use-package poetry)
+
+(use-package protobuf-mode)
+
 (use-package typescript-mode
   :after treesit
   :config
@@ -531,20 +509,8 @@
 (use-package treesit
   :elpaca nil)
 
-(use-package treesit-auto
-  :config
-  (global-treesit-auto-mode))
-
-(use-package combobulate
-   :elpaca (combobulate :host github :repo "mickeynp/combobulate")
-   :after treesit)
-
-;; (use-package tree-sitter-langs
-;;   :config
-;;   ;; This makes every node a link to a section of code
-;;   (setq tree-sitter-debug-jump-buttons t
-;;         ;; and this highlights the entire sub tree in your code
-;;         tree-sitter-debug-highlight-jump-region t))
+(use-package treesit-langs
+  :elpaca (treesit-langs :host github :repo "kiennq/treesit-langs"))
 
 (use-package magit
   :config
@@ -573,10 +539,6 @@
   :config
   (evil-multiedit-default-keybinds))
 
-(use-package projectile
-  :init
-  (projectile-mode +1))
-
 (use-package rainbow-delimiters
   :hook (prog-mode . rainbow-delimiters-mode))
 
@@ -587,9 +549,9 @@
   (setq corfu-cycle t  ; Allows cycling through candidates
         corfu-auto t   ; Enable auto completion
         corfu-auto-prefix 1  ; Complete with less prefix keys
-        corfu-auto-delay 0.3  ; No delay for completion
+        corfu-auto-delay 0.1  ; No delay for completion
         corfu-echo-documentation t ; Echo docs for current completion option
-        corfu-popupinfo-delay 0.3
+        corfu-popupinfo-delay 0.0
         corfu-quit-no-match 'separator
         corfu-quit-at-boundary 'insert)
 
@@ -967,11 +929,6 @@
   "n R" 'denote-rename-file-using-front-matter)
 
 (aadi/leader-keys
-  :keymaps 'projectile-mode-map
-  :states '(normal motion)
-  "p" '(:keymap projectile-command-map :whick-key "projects"))
-
-(aadi/leader-keys
   :states '(normal motion)
   "m" '(:ignore t :which-key "mode")
   "m k" 'consult-kmacro)
@@ -986,10 +943,6 @@
   "f" '(:ignore t :which-key "files")
   "f b" 'consult-bookmark
   "f r" 'consult-recent-file)
-
-(general-define-key
- [remap projectile-ripgrep] 'consult-ripgrep
- [remap projectile-find-file] 'consult-find)
 
 (general-define-key
  :states '(normal motion)
@@ -1010,6 +963,7 @@
 (aadi/leader-keys
   :states '(normal motion)
   "b" '(:ignore t :which-key "buffer")
+  "b f" 'fontaine-set-preset
   "b b" 'consult-buffer
   "b B" 'bookmark-bmenu-list
   "b k" 'kill-this-buffer)

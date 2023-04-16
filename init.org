@@ -9,7 +9,6 @@
 - [[#custom-function][Custom Function]]
 - [[#package-initialize][Package initialize]]
   - [[#elpaca][Elpaca]]
-  - [[#straight][Straight]]
 - [[#packages][Packages]]
   - [[#keybindings][Keybindings]]
   - [[#generally-helpful-package][Generally helpful Package]]
@@ -26,7 +25,6 @@
   - [[#dashboard-map][Dashboard Map]]
   - [[#magit-map][Magit Map]]
   - [[#denote-map][Denote Map]]
-  - [[#project][Project]]
   - [[#consult-map][Consult Map]]
   - [[#buffer-map][Buffer Map]]
   - [[#org-map][Org Map]]
@@ -405,33 +403,6 @@ It is in actively developing emacs package manager but it is not widely document
 
 (if (fboundp 'elpaca-wait)(elpaca-wait))
 #+end_src
-** Straight
-Straight.el if elpaca is too buggy for you. ( just replace all the :elpaca in package definations with :straight )
-#+begin_src emacs-lisp
-;; (defvar bootstrap-version)
-;; (let ((bootstrap-file
-;;          (expand-file-name "straight/repos/straight.el/bootstrap.el" user-emacs-directory))
-;;         (bootstrap-version 6))
-;;     (unless (file-exists-p bootstrap-file)
-;;       (with-current-buffer
-;;           (url-retrieve-synchronously
-;;            "https://raw.githubusercontent.com/radian-software/straight.el/develop/install.el"
-;;            'silent 'inhibit-cookies)
-;;         (goto-char (point-max))
-;;         (eval-print-last-sexp)))
-;;     (load bootstrap-file nil 'nomessage))
-;; (setq-default straight-vc-git-default-clone-depth '(1 single-branch))
-;; (setq straight-use-package-by-default t)
-;; (straight-use-package 'use-package)
-#+end_src
-*** Straight-x
-Using Straight does not mean that we can't have parallel downloads.
-Use the straight-x-fetch-all to pull all the installed packages in parallel.
-The use straight-merge-all to apply the pulled changed on packages.
-#+begin_src emacs-lisp
-;; (let ((straight-x-file (expand-file-name "straight/repos/straight.el/straight-x.el" user-emacs-directory)))
-;;   (if (file-exists-p straight-x-file) (load straight-x-file)))
-#+end_src
 * Packages
 ** Keybindings
 *** Undo Tree
@@ -444,14 +415,6 @@ A package which integrates into emacs keep undo history
         undo-tree-auto-save-history t)
   (global-undo-tree-mode))
 #+end_src
-*** Savehist
-Package which save command history and such which are not related to files
-#+begin_src emacs-lisp
-(use-package savehist
-  :elpaca nil
-  :init
-  (savehist-mode))
-#+end_src
 *** Evil
 Reference: https://github.com/emacs-evil/evil-collection#installation
 Emacs keybindings are OK but i am a vimmer
@@ -463,6 +426,7 @@ Emacs keybindings are OK but i am a vimmer
   (setq evil-undo-system 'undo-tree)
   :config
   (evil-mode 1))
+
 (setq evil-move-cursor-back nil
       evil-want-fine-undo t
       evil-move-beyond-eol t
@@ -471,6 +435,7 @@ Emacs keybindings are OK but i am a vimmer
       evil-search-module 'evil-search
       evil-vsplit-window-right t
       evil-split-window-below t)
+
 (with-eval-after-load 'evil
   (with-eval-after-load 'elpaca-ui (evil-make-intercept-map elpaca-ui-mode-map))
   (with-eval-after-load 'elpaca-info (evil-make-intercept-map elpaca-info-mode-map)))
@@ -499,16 +464,6 @@ Evil mode for popular packages
 (use-package tramp
   :elpaca nil)
 #+end_src
-*** PDF tools
-It is useful in emacs as you can link to specific pdf pages in org mode with links like
-`[[pdfview:~/path/to/pdf::<pageNo>]]`
-`[[pdfview:~/test.pdf::4]]`
-open 4th page in test pdf from a org mode link
-#+begin_src emacs-lisp
-(use-package pdf-tools
-  :config
-  (add-to-list 'auto-mode-alist '("\\.pdf\\'" . pdf-view-mode)))
-#+end_src
 *** Tempel
 Tempel is a less mature tempel templatin system then yasnippet but i like it template defining syntax more as it is more native to emacs
 #+begin_src emacs-lisp
@@ -521,28 +476,22 @@ I don't have to write commonly available snippets by hand
 #+begin_src emacs-lisp
 (use-package tempel-collection)
 #+end_src
-*** ts fold
-Code folding is nice
-#+begin_src emacs-lisp
-;; (use-package ts-fold
-;;   :elpaca (ts-fold :type git :host github :repo "emacs-tree-sitter/ts-fold"))
-#+end_src
 *** Emms
 Music Management with emacs
 #+begin_src emacs-lisp
 (use-package emms
   :config
   (emms-all)
-  (emms-player-mpd-connect)
-  (setq emms-info-functions '(emms-info-mpd)
-        emms-player-list '(emms-player-mpd)
-        emms-history-file nil
+  (setq emms-info-functions '(emms-info-native)
+        emms-player-list '(emms-player-vlc)
         emms-repeat-track t
         emms-mode-line-mode t
         emms-playlist-buffer-name "*Music*"
         emms-playing-time-mode t
         emms-info-asynchronously t
-        emms-source-file-directory-tree-function 'emms-source-file-directory-tree-find))
+        emms-source-file-directory-tree-function 'emms-source-file-directory-tree-find)
+  (emms-add-directory-tree "~/Music/")
+  (emms-add-directory-tree "~/Videos/Test Video"))
 #+end_src
 *** Helpful
 Better documentation of variable,function and alike in emacs
@@ -581,8 +530,7 @@ Don't want to scratch buffer on startup.
   :after all-the-icons
   :config
   (setq dashboard-items '((recents  . 5)
-                          (agenda . 5)
-                          (projects . 5)))
+                          (agenda . 5)))
   (setq dashboard-set-heading-icons t)
   (setq dashboard-startup-banner (random-element-of-list banner-icons-list))
   (setq dashboard-banner-logo-title "")
@@ -663,12 +611,12 @@ Icons in the auto completion which pop ups from the bottom ( in vertico )
 **** Corfu Icons
 Icons in the word or completion menu under cursor
 #+begin_src emacs-lisp
-(use-package kind-icon
-  :after corfu
-  :custom
-  (kind-icon-default-face 'corfu-default) ; to compute blended backgrounds correctly
-  :config
-  (add-to-list 'corfu-margin-formatters #'kind-icon-margin-formatter))
+;; (use-package kind-icon
+;;   :after corfu
+;;   :custom
+;;   (kind-icon-default-face 'corfu-default) ; to compute blended backgrounds correctly
+;;   :config
+;;   (add-to-list 'corfu-margin-formatters #'kind-icon-margin-formatter))
 #+end_src
 **** Dired Icons
 Icons in file manager as well
@@ -678,6 +626,10 @@ Icons in file manager as well
   (add-hook 'dired-mode-hook 'all-the-icons-dired-mode))
 #+end_src
 ** Coding
+*** Chat gpt
+#+begin_src emacs-lisp
+;; (use-package gptel)
+#+end_src
 *** Evil Nerd Commentor
 Smart commentor for most of the languages
 #+begin_src emacs-lisp
@@ -707,11 +659,11 @@ Smart commentor for most of the languages
 
 (use-package eglot
   :elpaca (eglot :host github :repo "joaotavora/eglot")
-  :after (eldoc-box)
+  :after (eldoc-box web-mode)
   :hook ((prog-mode . eglot-ensure))
   :config
   (setq completion-category-overrides '((eglot (styles orderless))))
-  (setq eldoc-idle-delay 0.3
+  (setq eldoc-idle-delay 0.0
         eglot-events-buffer-size 0
         flymake-no-changes-timeout 0.5
         eglot-autoshutdown t)
@@ -726,6 +678,8 @@ Smart commentor for most of the languages
   (add-to-list 'auto-mode-alist '("\\.yml\\'" . yaml-ts-mode))
   (add-to-list 'auto-mode-alist '("\\.yaml\\'" . yaml-ts-mode))
 
+  (define-derived-mode svelte-mode web-mode "Svelte")
+  (add-to-list 'auto-mode-alist '("\\.svelte\\'" . svelte-mode))
   (add-to-list 'eglot-ignored-server-capabilities :hoverProvider)
   (add-to-list 'eglot-server-programs '(svelte-mode . ("svelteserver" "--stdio")))
   (add-to-list 'eglot-server-programs `((c-mode c-ts-mode c++-mode c++-ts-mode)
@@ -756,6 +710,14 @@ Smart commentor for most of the languages
   ;; Volar
   (add-to-list 'eglot-server-programs
                           `(vue-mode . ("vue-language-server" "--stdio" :initializationOptions ,(vue-eglot-init-options)))))
+#+end_src
+*** Python
+#+begin_src emacs-lisp
+(use-package poetry)
+#+end_src
+*** Proto
+#+begin_src emacs-lisp
+(use-package protobuf-mode)
 #+end_src
 *** Typescript
 I still have not worked out typescript support with tsx and jsx file completion but svelte works perfectly
@@ -788,20 +750,8 @@ I still have not worked out typescript support with tsx and jsx file completion 
 (use-package treesit
   :elpaca nil)
 
-(use-package treesit-auto
-  :config
-  (global-treesit-auto-mode))
-
-(use-package combobulate
-   :elpaca (combobulate :host github :repo "mickeynp/combobulate")
-   :after treesit)
-
-;; (use-package tree-sitter-langs
-;;   :config
-;;   ;; This makes every node a link to a section of code
-;;   (setq tree-sitter-debug-jump-buttons t
-;;         ;; and this highlights the entire sub tree in your code
-;;         tree-sitter-debug-highlight-jump-region t))
+(use-package treesit-langs
+  :elpaca (treesit-langs :host github :repo "kiennq/treesit-langs"))
 #+end_src
 *** Magit
 Best git client (start with `SPC g g`)
@@ -842,13 +792,6 @@ Faster editing of text and faster workflow ( go over the word you want to multi 
   :config
   (evil-multiedit-default-keybinds))
 #+end_src
-*** Projectile
-Project management . Works well with code completion modes to find the root of the project
-#+begin_src emacs-lisp
-(use-package projectile
-  :init
-  (projectile-mode +1))
-#+end_src
 *** Rainbow Delimiter
 Don't want to match brackets with eyes just give them color.
 #+begin_src emacs-lisp
@@ -867,9 +810,9 @@ It has some performace issues with corfu you can use company-mode and company-bo
   (setq corfu-cycle t  ; Allows cycling through candidates
         corfu-auto t   ; Enable auto completion
         corfu-auto-prefix 1  ; Complete with less prefix keys
-        corfu-auto-delay 0.3  ; No delay for completion
+        corfu-auto-delay 0.1  ; No delay for completion
         corfu-echo-documentation t ; Echo docs for current completion option
-        corfu-popupinfo-delay 0.3
+        corfu-popupinfo-delay 0.0
         corfu-quit-no-match 'separator
         corfu-quit-at-boundary 'insert)
 
@@ -1297,13 +1240,6 @@ Remove this block with you are using straight.el
   "n r" 'denote-rename-file
   "n R" 'denote-rename-file-using-front-matter)
 #+end_src
-** Project
-#+begin_src emacs-lisp
-(aadi/leader-keys
-  :keymaps 'projectile-mode-map
-  :states '(normal motion)
-  "p" '(:keymap projectile-command-map :whick-key "projects"))
-#+end_src
 ** Consult Map
 *** Mode
 #+begin_src emacs-lisp
@@ -1326,12 +1262,6 @@ Remove this block with you are using straight.el
   "f" '(:ignore t :which-key "files")
   "f b" 'consult-bookmark
   "f r" 'consult-recent-file)
-#+end_src
-*** Projects
-#+begin_src emacs-lisp
-(general-define-key
- [remap projectile-ripgrep] 'consult-ripgrep
- [remap projectile-find-file] 'consult-find)
 #+end_src
 *** Goto
 #+begin_src emacs-lisp
@@ -1358,6 +1288,7 @@ Remove this block with you are using straight.el
 (aadi/leader-keys
   :states '(normal motion)
   "b" '(:ignore t :which-key "buffer")
+  "b f" 'fontaine-set-preset
   "b b" 'consult-buffer
   "b B" 'bookmark-bmenu-list
   "b k" 'kill-this-buffer)
