@@ -16,21 +16,9 @@
   - [[#coding][Coding]]
   - [[#completion][Completion]]
   - [[#org][Org]]
-- [[#package-install-wait][Package install wait]]
 - [[#keybindings-1][Keybindings]]
-  - [[#leader-key-definer-definations][Leader key definer definations]]
   - [[#general-good-defaults][General good defaults]]
   - [[#custom-function-map][Custom Function Map]]
-  - [[#org-agenda][Org agenda]]
-  - [[#dashboard-map][Dashboard Map]]
-  - [[#magit-map][Magit Map]]
-  - [[#denote-map][Denote Map]]
-  - [[#consult-map][Consult Map]]
-  - [[#buffer-map][Buffer Map]]
-  - [[#org-map][Org Map]]
-  - [[#helpful][Helpful]]
-  - [[#tempel][Tempel]]
-  - [[#eglot][Eglot]]
 
 * Early-init.el
 Stopping Some modules which i don't use from being loaded like menu-bar-mode,tool-bar-mode,scroll-bar-mode and package.el (build in emacs package manager).
@@ -170,8 +158,7 @@ Setting some default which suit well for me as well as enabling some performance
       dired-x-hands-off-my-keys t     ; easier to show the keys I use
       dired-bind-man nil
       dired-bind-info nil
-      delete-by-moving-to-trash t
-      +vertico-consult-fd-args "fd -p --color=never -i --type f -E node_modules --regex")
+      delete-by-moving-to-trash t)
 
 (put 'narrow-to-region 'disabled nil)
 
@@ -191,12 +178,6 @@ Setting some default which suit well for me as well as enabling some performance
 *** Org autoload
 #+begin_src emacs-lisp
 (autoload #'+org/dwim-at-point (concat user-emacs-directory "autoload/+org"))
-#+end_src
-*** Trailing whitespace
-#+begin_src emacs-lisp
-;; (setq-default show-trailing-whitespace t)
-;; (add-hook 'prog-mode-hook
-;;           (lambda () (font-lock-add-keywords nil '(("\\s-+$" 0 'trailing-whitespace)))))
 #+end_src
 *** Backspace
 #+begin_src emacs-lisp
@@ -405,16 +386,6 @@ It is in actively developing emacs package manager but it is not widely document
 #+end_src
 * Packages
 ** Keybindings
-*** Undo Tree
-A package which integrates into emacs keep undo history
-#+begin_src emacs-lisp
-(use-package undo-tree
-  :config
-  (setq undo-tree-history-directory-alist `(("." . ,(concat user-emacs-directory "undotree")))
-        undo-tree-visualizer-diff t
-        undo-tree-auto-save-history t)
-  (global-undo-tree-mode))
-#+end_src
 *** Evil
 Reference: https://github.com/emacs-evil/evil-collection#installation
 Emacs keybindings are OK but i am a vimmer
@@ -446,9 +417,23 @@ I don't want to write define-key multile times also it allows me to set keybindi
 (use-package general
   :after (evil)
   :config
+  (general-create-definer aadi/leader-keys
+    :states '(normal motion visual operator emacs)
+    :keymaps '(override global local)
+    :prefix "SPC")
+  (general-create-definer aadi/leader-local-keys
+    :states '(normal motion visual operator emacs)
+    :keymaps '(override global local)
+    :prefix "SPC m")
   (general-override-mode)
   (general-auto-unbind-keys)
   (general-evil-setup t))
+#+end_src
+**** Ensuring that general.el is loaded before using :general in package definations
+Wait till all the packages are installed with elpaca
+Remove this block with you are using straight.el
+#+begin_src emacs-lisp
+(if (fboundp 'elpaca-wait)(elpaca-wait))
 #+end_src
 *** Evil Collection
 Evil mode for popular packages
@@ -457,6 +442,16 @@ Evil mode for popular packages
   :after (evil)
   :config
   (evil-collection-init))
+#+end_src
+*** Undo Tree
+A package which integrates into emacs keep undo history
+#+begin_src emacs-lisp
+(use-package undo-tree
+  :config
+  (setq undo-tree-history-directory-alist `(("." . ,(concat user-emacs-directory "undotree")))
+        undo-tree-visualizer-diff t
+        undo-tree-auto-save-history t)
+  (global-undo-tree-mode))
 #+end_src
 ** Generally helpful Package
 *** Tramp
@@ -468,6 +463,13 @@ Evil mode for popular packages
 Tempel is a less mature tempel templatin system then yasnippet but i like it template defining syntax more as it is more native to emacs
 #+begin_src emacs-lisp
 (use-package tempel
+  :general
+  (:states 'insert
+           "C-s" 'tempel-complete)
+  (:states '(insert normal)
+           :keymaps 'tempel-map
+           "S-TAB" 'tempel-previous
+           "TAB" 'tempel-next)
   :config
   (global-tempel-abbrev-mode))
 #+end_src
@@ -482,21 +484,29 @@ Music Management with emacs
 (use-package emms
   :config
   (emms-all)
-  (setq emms-info-functions '(emms-info-native)
-        emms-player-list '(emms-player-vlc)
+  (setq emms-info-functions '(emms-info-mpd)
+        emms-player-list '(emms-player-mpd)
+        emms-player-mpd-music-directory "~/Music"
+        emms-history-file nil
         emms-repeat-track t
         emms-mode-line-mode t
         emms-playlist-buffer-name "*Music*"
         emms-playing-time-mode t
         emms-info-asynchronously t
         emms-source-file-directory-tree-function 'emms-source-file-directory-tree-find)
-  (emms-add-directory-tree "~/Music/")
-  (emms-add-directory-tree "~/Videos/Test Video"))
+  (emms-player-mpd-connect))
 #+end_src
 *** Helpful
 Better documentation of variable,function and alike in emacs
 #+begin_src emacs-lisp
-(use-package helpful)
+(use-package helpful
+  :general
+  (:prefix "C-h"
+           "f" 'helpful-callable
+           "v" 'helpful-variable
+           "k" 'helpful-key
+           "F" 'helpful-function
+           "C" 'helpful-command))
 #+end_src
 ** UI
 *** Unicode
@@ -528,7 +538,9 @@ Don't want to scratch buffer on startup.
 (setq banner-icons-list (file-expand-wildcards (concat user-emacs-directory "icons/*")))
 (use-package dashboard
   :after all-the-icons
-  :config
+  :general
+  (dashboard-mode-map "RET" 'dashboard-return)
+  :init
   (setq dashboard-items '((recents  . 5)
                           (agenda . 5)))
   (setq dashboard-set-heading-icons t)
@@ -550,35 +562,14 @@ Everyone forgets keybindings
   (which-key-mode))
 #+end_src
 *** Theme
-**** Doom themes
-#+begin_src emacs-lisp
-(use-package doom-themes
-  :config
-  (setq doom-themes-enable-bold t
-        doom-themes-enable-italic t)
-  (doom-themes-visual-bell-config)
-
-  (load-theme 'doom-dracula t)
-  (add-hook 'server-after-make-frame-functions
-            (lambda (frame)
-              (with-selected-frame frame
-                (load-theme 'doom-dracula t))))
-  (custom-set-faces
-   '(doom-themes-visual-bell ((t (:background "#00FFFF"))))
-   '(emms-playlist-selected-face ((t (:foreground "royal blue"))))
-   '(emms-playlist-track-face ((t (:foreground "#5da3e7"))))
-   '(emms-playlist-selected-face ((t (:foreground "royal blue"))))
-   '(emms-playlist-track-face ((t (:foreground "#5da3e7"))))
-   '(org-ellipsis (( t(:foreground "#C678DD"))))))
-#+end_src
 **** Modus theme
 High contrast theme
 #+begin_src emacs-lisp
-;; (use-package modus-themes
-;;   :config
-;;   (setq modus-themes-italic-constructs t
-;;         modus-themes-bold-constructs t)
-;;   (load-theme 'modus-vivendi-tinted t))
+(use-package modus-themes
+  :config
+  (setq modus-themes-italic-constructs t
+        modus-themes-bold-constructs t)
+  (load-theme 'modus-vivendi-tinted t))
 #+end_src
 *** Doom modeline
 Changing the default modeline to a better one ( in my opinion )
@@ -637,16 +628,6 @@ Smart commentor for most of the languages
 #+end_src
 *** Eglot
 #+begin_src emacs-lisp
-;; Best programming language so we need to include it
-(use-package rustic
-  :config
-  (setq rustic-enable-detached-file-support t)
-  (setq rustic-lsp-client 'eglot))
-
-(use-package eldoc-box
-  :config
-  (setq eldoc-echo-area-use-multiline-p nil))
-
 (use-package flycheck
   :config
   (global-flycheck-mode 1))
@@ -656,32 +637,27 @@ Smart commentor for most of the languages
   :config
   (global-flycheck-eglot-mode 1))
 
-
 (use-package eglot
   :elpaca (eglot :host github :repo "joaotavora/eglot")
-  :after (eldoc-box web-mode)
+  :after (web-mode)
   :hook ((prog-mode . eglot-ensure))
   :config
-  (setq completion-category-overrides '((eglot (styles orderless))))
-  (setq eldoc-idle-delay 0.0
-        eglot-events-buffer-size 0
-        flymake-no-changes-timeout 0.5
+
+  ;; (add-to-list 'eglot-ignored-server-capabilities :hoverProvider)
+  (setq eglot-events-buffer-size 0
         eglot-autoshutdown t)
-  (add-hook 'eglot-managed-mode-hook #'eldoc-box-hover-mode t)
-  (add-hook 'eglot-managed-mode-hook
-            (lambda ()
-              "Make sure Eldoc will show us all of the feedback at point."
-              (setq-local eldoc-documentation-strategy
-                          #'eldoc-documentation-compose)))
+  (add-hook 'eglot--managed-mode-hook (lambda () (flymake-mode -1)))
 
   ;; Yaml mode 
   (add-to-list 'auto-mode-alist '("\\.yml\\'" . yaml-ts-mode))
   (add-to-list 'auto-mode-alist '("\\.yaml\\'" . yaml-ts-mode))
 
+  ;; Svelte Mode
   (define-derived-mode svelte-mode web-mode "Svelte")
   (add-to-list 'auto-mode-alist '("\\.svelte\\'" . svelte-mode))
-  (add-to-list 'eglot-ignored-server-capabilities :hoverProvider)
   (add-to-list 'eglot-server-programs '(svelte-mode . ("svelteserver" "--stdio")))
+
+  ;; C++ Mode
   (add-to-list 'eglot-server-programs `((c-mode c-ts-mode c++-mode c++-ts-mode)
                                         . ,(eglot-alternatives
                                             '("ccls" "clangd"))))
@@ -690,53 +666,73 @@ Smart commentor for most of the languages
   (add-to-list 'auto-mode-alist '("\\.vue\\'" . vue-mode))
   
   (defun vue-eglot-init-options ()
-               (let ((tsdk-path (expand-file-name
-                                 "lib"
-                                 (shell-command-to-string "npm list --global --parseable typescript | head -n1 | tr -d \"\n\""))))
-                 `(:typescript (:tsdk ,tsdk-path
-                                :languageFeatures (:completion
-                                                   (:defaultTagNameCase "both"
-                                                    :defaultAttrNameCase "kebabCase"
-                                                    :getDocumentNameCasesRequest nil
-                                                    :getDocumentSelectionRequest nil)
-                                                   :diagnostics
-                                                   (:getDocumentVersionRequest nil))
-                                :documentFeatures (:documentFormatting
-                                                   (:defaultPrintWidth 100
-                                                    :getDocumentPrintWidthRequest nil)
-                                                   :documentSymbol t
-                                                   :documentColor t)))))
+    (let ((tsdk-path (expand-file-name
+                      "lib"
+                      (shell-command-to-string "npm list --global --parseable typescript | head -n1 | tr -d \"\n\""))))
+      `(:typescript (:tsdk ,tsdk-path
+                           :languageFeatures (:completion
+                                              (:defaultTagNameCase "both"
+                                                                   :defaultAttrNameCase "kebabCase"
+                                                                   :getDocumentNameCasesRequest nil
+                                                                   :getDocumentSelectionRequest nil)
+                                              :diagnostics
+                                              (:getDocumentVersionRequest nil))
+                           :documentFeatures (:documentFormatting
+                                              (:defaultPrintWidth 100
+                                                                  :getDocumentPrintWidthRequest nil)
+                                              :documentSymbol t
+                                              :documentColor t)))))
   
   ;; Volar
   (add-to-list 'eglot-server-programs
-                          `(vue-mode . ("vue-language-server" "--stdio" :initializationOptions ,(vue-eglot-init-options)))))
+               `(vue-mode . ("vue-language-server" "--stdio" :initializationOptions ,(vue-eglot-init-options)))))
+#+end_src
+*** Rust
+#+begin_src emacs-lisp
+(use-package rustic
+  :general
+  :config
+  (setq rustic-enable-detached-file-support t)
+  (setq rustic-lsp-client 'eglot))
 #+end_src
 *** Python
 #+begin_src emacs-lisp
 (use-package poetry)
 #+end_src
+*** Project Management
+#+begin_src emacs-lisp
+;; Credits to karthink > https://github.com/karthink/project-x/blob/234f528bf3cf320b0d07ca61c6f9b2566167f0b3/project-x.el#L157
+;; Recognize directories as projects by defining a new project backend `local'
+;; -------------------------------------
+(defcustom project-x-local-identifier ".project"
+  "Filename(s) that identifies a directory as a project.
+You can specify a single filename or a list of names."
+  :type '(choice (string :tag "Single file")
+                 (repeat (string :tag "Filename")))
+  :group 'project-x)
+
+(cl-defmethod project-root ((project (head local)))
+  "Return root directory of current PROJECT."
+  (cdr project))
+
+(defun project-x-try-local (dir)
+  "Determine if DIR is a non-VC project.
+DIR must include a .project file to be considered a project."
+  (if-let ((root (if (listp project-x-local-identifier)
+                     (seq-some (lambda (n)
+                                 (locate-dominating-file dir n))
+                               project-x-local-identifier)
+                   (locate-dominating-file dir project-x-local-identifier))))
+      (cons 'local root)))
+
+(add-hook 'project-find-functions 'project-x-try-local 90)
+#+end_src
 *** Proto
 #+begin_src emacs-lisp
-(use-package protobuf-mode)
+;; (use-package protobuf-mode)
 #+end_src
 *** Typescript
 I still have not worked out typescript support with tsx and jsx file completion but svelte works perfectly
-**** Typescript Mode
-#+begin_src emacs-lisp
-(use-package typescript-mode
-  :after treesit
-  :config
-  ;; we choose this instead of tsx-mode so that eglot can automatically figure out language for server
-  ;; see https://github.com/joaotavora/eglot/issues/624 and https://github.com/joaotavora/eglot#handling-quirky-servers
-  (define-derived-mode typescriptreact-mode typescript-mode
-    "TypeScript TSX")
-
-  ;; use our derived mode for tsx files
-  (add-to-list 'auto-mode-alist '("\\.tsx?\\'" . typescriptreact-mode)))
-  ;; by default, typescript-mode is mapped to the treesitter typescript parser
-  ;; use our derived mode to map both .tsx AND .ts -> typescriptreact-mode -> treesitter tsx
-  ;; (add-to-list 'tree-sitter-major-mode-language-alist '(typescriptreact-mode . tsx)))
-#+end_src
 **** Web mode
 #+begin_src emacs-lisp
 (use-package web-mode
@@ -757,6 +753,9 @@ I still have not worked out typescript support with tsx and jsx file completion 
 Best git client (start with `SPC g g`)
 #+begin_src emacs-lisp
 (use-package magit
+  :general
+  (:keymaps 'transient-map
+            "<escape>" 'transient-quit-one)
   :config
   (add-hook 'git-commit-post-finish-hook 'magit)
   (setq magit-display-buffer-function #'magit-display-buffer-fullframe-status-v1))
@@ -814,14 +813,7 @@ It has some performace issues with corfu you can use company-mode and company-bo
         corfu-echo-documentation t ; Echo docs for current completion option
         corfu-popupinfo-delay 0.0
         corfu-quit-no-match 'separator
-        corfu-quit-at-boundary 'insert)
-
-  ;; Silence the pcomplete capf, no errors or messages!
-  (advice-add 'pcomplete-completions-at-point :around #'cape-wrap-silent)
-
-  ;; Ensure that pcomplete does not write to the buffer
-  ;; and behaves as a pure `completion-at-point-function'.
-  (advice-add 'pcomplete-completions-at-point :around #'cape-wrap-purify)
+        corfu-quit-at-boundary 'separator)
   (global-corfu-mode 1)
   (corfu-popupinfo-mode 1))
 #+end_src
@@ -831,15 +823,23 @@ Giving completion to the completion system
 (use-package cape
   :init
   (add-to-list 'completion-at-point-functions #'cape-file)
-  (add-to-list 'completion-at-point-functions #'cape-dabbrev))
+  (add-to-list 'completion-at-point-functions #'cape-dabbrev)
+
+
+  ;; Silence the pcomplete capf, no errors or messages!
+  (advice-add 'pcomplete-completions-at-point :around #'cape-wrap-silent)
+
+  ;; Ensure that pcomplete does not write to the buffer
+  ;; and behaves as a pure `completion-at-point-function'.
+  (advice-add 'pcomplete-completions-at-point :around #'cape-wrap-purify))
 #+end_src
 *** Embark
 Performaing action in thing at point
 #+begin_src emacs-lisp
 (use-package embark
-  :bind
-  (("C-;" . embark-act)         ;; pick some comfortable binding
-   ("C-h B" . embark-bindings)) ;; alternative for `describe-bindings'
+  :general
+  ("C-a" 'embark-act)
+  ("C-h B" 'embark-bindings)
   :init
   ;; Optionally replace the key help with a completing-read interface
   (setq prefix-help-command #'embark-prefix-help-command
@@ -850,6 +850,7 @@ Performaing action in thing at point
                '("\\`\\*Embark Collect \\(Live\\|Completions\\)\\*"
                  nil
                  (window-parameters (mode-line-format . none)))))
+
 (defun embark-which-key-indicator ()
   "An embark indicator that displays keymaps using which-key.
     The which-key help message will show the type and value of the
@@ -892,6 +893,10 @@ Better completion system with a filtering with orderless
 #+begin_src emacs-lisp
 (use-package vertico
   :elpaca (vertico :files (:defaults "extensions/*.el"))
+  :general
+  (:keymaps 'vertico-map
+            "C-j" 'vertico-next
+            "C-k" 'vertico-previous)
   :init
   (setq vertico-count 20
         vertico-resize nil
@@ -945,62 +950,62 @@ Best fuzzy matching in anyway and anywhere
 #+begin_src emacs-lisp
 (use-package orderless
   :custom
-  ;;(orderless-matching-styles '(orderless-literal orderless-regexp orderless-flex))
+  (orderless-matching-styles '(orderless-literal orderless-regexp orderless-flex))
   (completion-styles '(orderless))
   (completion-category-overrides '((file (styles partial-completion)))))
 #+end_src
 *** Consult
 Better command for default actions like buffer management, find and grep actions
 #+begin_src emacs-lisp
-(defvar consult--fd-command nil)
-(defun consult--fd-builder (input)
-  (unless consult--fd-command
-    (setq consult--fd-command
-          (if (eq 0 (call-process-shell-command "fdfind"))
-              "fdfind"
-            "fd")))
-  (pcase-let* ((`(,arg . ,opts) (consult--command-split input))
-               (`(,re . ,hl) (funcall consult--regexp-compiler
-                                      arg 'extended t)))
-    (when re
-      (cons (append
-             (list consult--fd-command
-                   "--color=never" "--full-path"
-                   (consult--join-regexps re 'extended))
-             opts)
-            hl))))
-
-(defun consult-fd (&optional dir initial)
-  (interactive "P")
-  (let* ((prompt-dir (consult--directory-prompt "Fd" dir))
-         (default-directory (cdr prompt-dir)))
-    (find-file (consult--find (car prompt-dir) #'consult--fd-builder initial))))
-
 (use-package consult
-  :hook (completion-list-mode . consult-preview-at-point-mode)
+  :general
+  ("?" '(consult-line :which-key "filter buffer"))
+  (:states '(normal motion)
+  "g" '(:ignore t :which-key "goto")
+  "g e" 'consult-compile-error
+  "g l" 'consult-goto-line)
+  ("M-C-'" 'consult-register-load)
+  ("M-'" 'consult-register-store)
+  ("M-\"" 'consult-register)
   :init
+  ;; Optionally configure the register formatting. This improves the register
+  ;; preview for `consult-register', `consult-register-load',
+  ;; `consult-register-store' and the Emacs built-ins.
   (setq register-preview-delay 0.5
         register-preview-function #'consult-register-format)
+
+  ;; Optionally tweak the register preview window.
+  ;; This adds thin lines, sorting and hides the mode line of the window.
   (advice-add #'register-preview :override #'consult-register-window)
+
+  ;; Use Consult to select xref locations with preview
   (setq xref-show-xrefs-function #'consult-xref
         xref-show-definitions-function #'consult-xref)
-  :config
-  (consult-customize
-   consult-theme :preview-key '(:debounce 0.2 any)
-   consult-ripgrep consult-git-grep consult-grep
-   consult-bookmark consult-recent-file consult-xref
-   consult--source-bookmark consult--source-file-register
-   consult--source-recent-file consult--source-project-recent-file
-   ;; :preview-key (kbd "M-.")
-   :preview-key '(:debounce 0.4 any))
-  (defun consult--orderless-regexp-compiler (input type &rest _config)
-    (setq input (orderless-pattern-compiler input))
-    (cons
-     (mapcar (lambda (r) (consult--convert-regexp r type)) input)
-     (lambda (str) (orderless--highlight input str))))
 
-  (setq consult--regexp-compiler #'consult--orderless-regexp-compiler)
-  (setq consult-narrow-key "<")) ;; (kbd "C-+")
+  ;; Enable using fd with consult
+  (defvar consult--fd-command nil)
+  (defun consult--fd-builder (input)
+    (unless consult--fd-command
+      (setq consult--fd-command
+            (if (eq 0 (call-process-shell-command "fdfind"))
+                "fdfind"
+              "fd")))
+    (pcase-let* ((`(,arg . ,opts) (consult--command-split input))
+                 (`(,re . ,hl) (funcall consult--regexp-compiler
+                                        arg 'extended t)))
+      (when re
+        (cons (append
+               (list consult--fd-command
+                     "--color=never" "--full-path"
+                     (consult--join-regexps re 'extended))
+               opts)
+              hl))))
+
+  (defun consult-fd (&optional dir initial)
+    (interactive "P")
+    (pcase-let* ((`(,prompt ,paths ,dir) (consult--directory-prompt "Fd" dir))
+                 (default-directory dir))
+      (find-file (consult--find prompt #'consult--fd-builder initial)))))
 #+end_src
 *** Embark Consult
 #+begin_src emacs-lisp
@@ -1013,31 +1018,38 @@ Better command for default actions like buffer management, find and grep actions
 ;; Automatically paste a online link with the description set to the title of the page
 (use-package org-cliplink)
 
-;; Opening links at point
-(use-package link-hint)
-
 ;; Don't want to create table of content manually in org mode
 (use-package toc-org)
 
-(defadvice org-babel-execute-src-block (around load-language nil activate)
-  "Load language if needed"
-  (let ((language (org-element-property :language (org-element-at-point))))
-    (unless (cdr (assoc (intern language) org-babel-load-languages))
-      (add-to-list 'org-babel-load-languages (cons (intern language) t))
-      (org-babel-do-load-languages 'org-babel-load-languages org-babel-load-languages))
-    ad-do-it))
+(use-package org
+  :elpaca nil
+  :general
+  (:states '(normal motion)
+           "C-c a" 'org-capture)
+  (:keymaps 'org-mode-map
+            :states 'normal
+            "<RET>" '+org/dwim-at-point
+            "?\t" 'org-cycle
+            "z i" '(org-toggle-inline-images :whick-key "inline images"))
+  (defadvice org-babel-execute-src-block (around load-language nil activate)
+    "Load language if needed"
+    (let ((language (org-element-property :language (org-element-at-point))))
+      (unless (cdr (assoc (intern language) org-babel-load-languages))
+        (add-to-list 'org-babel-load-languages (cons (intern language) t))
+        (org-babel-do-load-languages 'org-babel-load-languages org-babel-load-languages))
+      ad-do-it))
 
-;; Life todo mangement with org mode and org agenda
-(setq org-log-done 'time)
-(setq org-todo-keywords
-      '((sequence "TODO(t)" "PROJ(p)" "ACTIVE(a)" "REVIEW(r)" "START(s)" "NEXT(N)" "WORKING(w)" "HOLD(h)" "|" "DONE(d)" "KILL(k)")
-        (sequence "|" "OKAY(o)" "YES(y)" "NO(n)")))
+  ;; Life todo mangement with org mode and org agenda
+  (setq org-log-done 'time)
+  (setq org-todo-keywords
+        '((sequence "TODO(t)" "PROJ(p)" "ACTIVE(a)" "REVIEW(r)" "START(s)" "NEXT(N)" "WORKING(w)" "HOLD(h)" "|" "DONE(d)" "KILL(k)")
+          (sequence "|" "OKAY(o)" "YES(y)" "NO(n)")))
 
-(defun adi/org-setup()
-  (org-indent-mode +1)
-  (toc-org-mode +1))
+  (defun adi/org-setup()
+    (org-indent-mode +1)
+    (toc-org-mode +1))
 
-(add-hook 'org-mode-hook 'adi/org-setup)
+  (add-hook 'org-mode-hook 'adi/org-setup))
 #+end_src
 *** Org Modern
 Better sytling default for org mode bring more to the modern era style
@@ -1068,20 +1080,26 @@ Better sytling default for org mode bring more to the modern era style
 *** Org agenda
 Extract todo from org files in the directory to form a logical layout
 #+begin_src emacs-lisp
-(setq org-agenda-files '("~/Documents/Denote/Todo/"))
-(setq org-agenda-window-setup 'current-window
-      org-agenda-tags-column 0
-      org-agenda-start-on-weekday nil
-      org-agenda-block-separator ?─
-      org-agenda-time-grid
-      '((daily today require-timed)
-        (800 1000 1200 1400 1600 1800 2000)
-        " ┄┄┄┄┄ " "┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄")
-      org-agenda-current-time-string
-      "⭠ now ─────────────────────────────────────────────────"
-      org-agenda-span 14
-      org-agenda-start-day "-3d"
-      org-agenda-inhibit-startup t)
+(use-package org-agenda
+  :elpaca nil
+  :general
+  (aadi/leader-keys
+    "z" 'org-agenda)
+  :init
+  (setq org-agenda-files '("~/Documents/Denote/Todo/"))
+  (setq org-agenda-window-setup 'current-window
+        org-agenda-tags-column 0
+        org-agenda-start-on-weekday nil
+        org-agenda-block-separator ?─
+        org-agenda-time-grid
+        '((daily today require-timed)
+          (800 1000 1200 1400 1600 1800 2000)
+          " ┄┄┄┄┄ " "┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄")
+        org-agenda-current-time-string
+        "⭠ now ─────────────────────────────────────────────────"
+        org-agenda-span 14
+        org-agenda-start-day "-3d"
+        org-agenda-inhibit-startup t))
 #+end_src
 *** Org Denote
 Notes capturing utility
@@ -1140,33 +1158,16 @@ Notes capturing utility
                  :jump-to-captured t)))
 (add-hook 'org-capture-after-finalize-hook 'my-denote--add-todo-keyword)
 #+end_src
-* Package install wait
+* Waiting for packages to load successfully 
 Wait till all the packages are installed with elpaca
 Remove this block with you are using straight.el
 #+begin_src emacs-lisp
 (if (fboundp 'elpaca-wait)(elpaca-wait))
 #+end_src
 * Keybindings
-** Leader key definer definations
-#+begin_src emacs-lisp
-(general-create-definer aadi/leader-keys
-  :states '(normal motion visual operator emacs)
-  :keymaps '(override global local)
-  :prefix "SPC")
-(general-create-definer aadi/leader-local-keys
-  :states '(normal motion visual operator emacs)
-  :keymaps '(override global local)
-  :prefix "SPC m")
-#+end_src
 ** General good defaults
 #+begin_src emacs-lisp
 (global-set-key (kbd "<escape>") 'keyboard-escape-quit)
-(global-set-key (kbd "C-;") 'embark-act)
-
-(general-define-key
- :keymaps 'vertico-map
- "C-j" 'vertico-next
- "C-k" 'vertico-previous)
 
 (general-define-key
  :keymaps '(minibuffer-mode-map isearch-mode-map)
@@ -1185,7 +1186,6 @@ Remove this block with you are using straight.el
 (general-define-key
  :states 'motion
  "K" 'helpful-at-point
- "?" '(consult-line :which-key "filter buffer")
  "M-/" 'evilnc-comment-or-uncomment-lines)
 #+end_src
 ** Custom Function Map
@@ -1198,33 +1198,27 @@ Remove this block with you are using straight.el
  :states 'insert
  "<C-backspace>" 'my/backward-kill-word)
 #+end_src
-** Org agenda
+** Consult
 #+begin_src emacs-lisp
 (aadi/leader-keys
-  "z" 'org-agenda)
-#+end_src
-** Dashboard Map
-#+begin_src emacs-lisp
-(general-define-key
- :keymaps 'dashboard-mode-map
- :states '(normal emacs)
- "RET" 'dashboard-return)
-#+end_src
-** Magit Map
-#+begin_src emacs-lisp
-(general-define-key
- :keymaps 'transient-map
- "<escape>" 'transient-quit-one)
-(aadi/leader-keys
-  :states '(normal motion)
-  "g" '(:ignore t :which-key "git")
+  "b" '(:ignore t :which-key "buffer")
+  "b b" 'consult-buffer
+  "b k" 'kill-this-buffer
+  "c" '(:ignore t :which-key "commands")
+  "c r" '(consult-complex-command :which-key "Complex Command repeat")
+  "f" '(:ignore t :which-key "files")
+  "f f" 'consult-fd
+  "f g" 'consult-ripgrep
+  "f b" 'consult-bookmark
+  "f r" 'consult-recent-file
   "g s" 'consult-git-grep
-  "g g" 'magit)
+  "m" '(:ignore t :which-key "mode")
+  "m k" 'consult-kmacro
+  )
 #+end_src
-** Denote Map
+** Denote
 #+begin_src emacs-lisp
 (aadi/leader-keys
-  :states '(normal motion)
   "n" '(:ignore t :which-key "denote")
   "n c" 'denote-create-note-in-subdirectory
   "n n" 'denote
@@ -1240,72 +1234,8 @@ Remove this block with you are using straight.el
   "n r" 'denote-rename-file
   "n R" 'denote-rename-file-using-front-matter)
 #+end_src
-** Consult Map
-*** Mode
+** Org Mode
 #+begin_src emacs-lisp
-(aadi/leader-keys
-  :states '(normal motion)
-  "m" '(:ignore t :which-key "mode")
-  "m k" 'consult-kmacro)
-#+end_src
-*** Command
-#+begin_src emacs-lisp
-(aadi/leader-keys
-  :states '(normal motion)
-  "c" '(:ignore t :which-key "commands")
-  "c r" '(consult-complex-command :which-key "Complex Command repeat"))
-#+end_src
-*** File
-#+begin_src emacs-lisp
-(aadi/leader-keys
-  :states '(normal motion)
-  "f" '(:ignore t :which-key "files")
-  "f b" 'consult-bookmark
-  "f r" 'consult-recent-file)
-#+end_src
-*** Goto
-#+begin_src emacs-lisp
-(general-define-key
- :states '(normal motion)
- "g" '(:ignore t :which-key "goto"))
-
-(general-define-key
- :states '(normal motion)
- :prefix "g"
- "e" 'consult-compile-error
- "l" 'consult-goto-line)
-#+end_src
-*** Registers
-#+begin_src emacs-lisp
-(general-define-key
- :states '(normal motion)
- "M-C-'" 'consult-register-load
- "M-'" 'consult-register-store
- "M-\"" 'consult-register)
-#+end_src
-** Buffer Map
-#+begin_src emacs-lisp
-(aadi/leader-keys
-  :states '(normal motion)
-  "b" '(:ignore t :which-key "buffer")
-  "b f" 'fontaine-set-preset
-  "b b" 'consult-buffer
-  "b B" 'bookmark-bmenu-list
-  "b k" 'kill-this-buffer)
-#+end_src
-** Org Map
-#+begin_src emacs-lisp
-(general-define-key
- :states '(normal motion)
- "C-c a" 'org-capture)
-(general-define-key
- :keymaps 'org-mode-map
- :states 'normal
- "<RET>" '+org/dwim-at-point
- "?\t" 'org-cycle
- "C-c a" 'link-hint-copy-link-at-point
- "z i" '(org-toggle-inline-images :whick-key "inline images"))
-
 (aadi/leader-keys org-mode-map
   "m" '(:ignore t :which-key "org localleader")
   "a" 'my-denote-move-from-todo-to-archive)
@@ -1315,7 +1245,19 @@ Remove this block with you are using straight.el
   "l" '(:ignore t :which-key "link")
   "l c" 'org-cliplink)
 #+end_src
-*** Rustic Mode
+** Magit
+#+begin_src emacs-lisp
+(aadi/leader-keys
+  :states '(normal motion)
+  "g" '(:ignore t :which-key "git")
+  "g g" 'magit)
+#+end_src
+** Eglot
+#+begin_src emacs-lisp
+(aadi/leader-keys :keymaps 'eglot-mode-map "m" '(:ignore t :which-key "eglot localleader"))
+(aadi/leader-local-keys :keymaps 'eglot-mode-map "a" 'eglot-format)
+#+end_src
+*** Rustic Modeline
 #+begin_src emacs-lisp
 (aadi/leader-local-keys
   :keymaps 'rustic-mode-map
@@ -1325,31 +1267,8 @@ Remove this block with you are using straight.el
   "f" 'copy-current-file
   "c" 'smart-compile)
 #+end_src
-** Helpful
+** Fontaine
 #+begin_src emacs-lisp
-(general-define-key
- :prefix "C-h"
- "f" 'helpful-callable
- "v" 'helpful-variable
- "k" 'helpful-key
- "F" 'helpful-function
- "C" 'helpful-command)
-#+end_src
-** Tempel
-#+begin_src emacs-lisp
-(general-define-key
- :states 'insert
- "C-s" 'tempel-complete)
-(general-define-key
- :states '(insert normal)
- :keymaps 'tempel-map
- "S-TAB" 'tempel-previous
- "TAB" 'tempel-next)
-#+end_src
-** Eglot
-#+begin_src emacs-lisp
-(aadi/leader-keys eglot-mode-map
-  "m" '(:ignore t :which-key "eglot localleader"))
-(aadi/leader-local-keys eglot-mode-map
-  "a" 'eglot-format)
+(aadi/leader-keys
+  "b f" 'fontaine-set-preset)
 #+end_src

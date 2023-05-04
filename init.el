@@ -45,8 +45,7 @@
       dired-x-hands-off-my-keys t     ; easier to show the keys I use
       dired-bind-man nil
       dired-bind-info nil
-      delete-by-moving-to-trash t
-      +vertico-consult-fd-args "fd -p --color=never -i --type f -E node_modules --regex")
+      delete-by-moving-to-trash t)
 
 (put 'narrow-to-region 'disabled nil)
 
@@ -63,10 +62,6 @@
 (setq auto-save-file-name-transforms `((".*" ,temporary-file-directory t)))
 
 (autoload #'+org/dwim-at-point (concat user-emacs-directory "autoload/+org"))
-
-;; (setq-default show-trailing-whitespace t)
-;; (add-hook 'prog-mode-hook
-;;           (lambda () (font-lock-add-keywords nil '(("\\s-+$" 0 'trailing-whitespace)))))
 
 (defun my/backward-kill-word ()
   "Kill backward to the beginning of the current word, but do not cross lines."
@@ -245,13 +240,6 @@
 
 (if (fboundp 'elpaca-wait)(elpaca-wait))
 
-(use-package undo-tree
-  :config
-  (setq undo-tree-history-directory-alist `(("." . ,(concat user-emacs-directory "undotree")))
-        undo-tree-visualizer-diff t
-        undo-tree-auto-save-history t)
-  (global-undo-tree-mode))
-
 (use-package evil
   :init
   (setq evil-want-integration t) ;; This is optional since it's already set to t by default.
@@ -276,19 +264,43 @@
 (use-package general
   :after (evil)
   :config
+  (general-create-definer aadi/leader-keys
+    :states '(normal motion visual operator emacs)
+    :keymaps '(override global local)
+    :prefix "SPC")
+  (general-create-definer aadi/leader-local-keys
+    :states '(normal motion visual operator emacs)
+    :keymaps '(override global local)
+    :prefix "SPC m")
   (general-override-mode)
   (general-auto-unbind-keys)
   (general-evil-setup t))
+
+(if (fboundp 'elpaca-wait)(elpaca-wait))
 
 (use-package evil-collection
   :after (evil)
   :config
   (evil-collection-init))
 
+(use-package undo-tree
+  :config
+  (setq undo-tree-history-directory-alist `(("." . ,(concat user-emacs-directory "undotree")))
+        undo-tree-visualizer-diff t
+        undo-tree-auto-save-history t)
+  (global-undo-tree-mode))
+
 (use-package tramp
   :elpaca nil)
 
 (use-package tempel
+  :general
+  (:states 'insert
+           "C-s" 'tempel-complete)
+  (:states '(insert normal)
+           :keymaps 'tempel-map
+           "S-TAB" 'tempel-previous
+           "TAB" 'tempel-next)
   :config
   (global-tempel-abbrev-mode))
 
@@ -297,18 +309,26 @@
 (use-package emms
   :config
   (emms-all)
-  (setq emms-info-functions '(emms-info-native)
-        emms-player-list '(emms-player-vlc)
+  (setq emms-info-functions '(emms-info-mpd)
+        emms-player-list '(emms-player-mpd)
+        emms-player-mpd-music-directory "~/Music"
+        emms-history-file nil
         emms-repeat-track t
         emms-mode-line-mode t
         emms-playlist-buffer-name "*Music*"
         emms-playing-time-mode t
         emms-info-asynchronously t
         emms-source-file-directory-tree-function 'emms-source-file-directory-tree-find)
-  (emms-add-directory-tree "~/Music/")
-  (emms-add-directory-tree "~/Videos/Test Video"))
+  (emms-player-mpd-connect))
 
-(use-package helpful)
+(use-package helpful
+  :general
+  (:prefix "C-h"
+           "f" 'helpful-callable
+           "v" 'helpful-variable
+           "k" 'helpful-key
+           "F" 'helpful-function
+           "C" 'helpful-command))
 
 (use-package unicode-fonts)
 
@@ -332,7 +352,9 @@
 (setq banner-icons-list (file-expand-wildcards (concat user-emacs-directory "icons/*")))
 (use-package dashboard
   :after all-the-icons
-  :config
+  :general
+  (dashboard-mode-map "RET" 'dashboard-return)
+  :init
   (setq dashboard-items '((recents  . 5)
                           (agenda . 5)))
   (setq dashboard-set-heading-icons t)
@@ -350,30 +372,11 @@
   :init
   (which-key-mode))
 
-(use-package doom-themes
+(use-package modus-themes
   :config
-  (setq doom-themes-enable-bold t
-        doom-themes-enable-italic t)
-  (doom-themes-visual-bell-config)
-
-  (load-theme 'doom-dracula t)
-  (add-hook 'server-after-make-frame-functions
-            (lambda (frame)
-              (with-selected-frame frame
-                (load-theme 'doom-dracula t))))
-  (custom-set-faces
-   '(doom-themes-visual-bell ((t (:background "#00FFFF"))))
-   '(emms-playlist-selected-face ((t (:foreground "royal blue"))))
-   '(emms-playlist-track-face ((t (:foreground "#5da3e7"))))
-   '(emms-playlist-selected-face ((t (:foreground "royal blue"))))
-   '(emms-playlist-track-face ((t (:foreground "#5da3e7"))))
-   '(org-ellipsis (( t(:foreground "#C678DD"))))))
-
-;; (use-package modus-themes
-;;   :config
-;;   (setq modus-themes-italic-constructs t
-;;         modus-themes-bold-constructs t)
-;;   (load-theme 'modus-vivendi-tinted t))
+  (setq modus-themes-italic-constructs t
+        modus-themes-bold-constructs t)
+  (load-theme 'modus-vivendi-tinted t))
 
 (use-package doom-modeline
   :elpaca (doom-modeline :host github :repo "seagle0128/doom-modeline")
@@ -408,16 +411,6 @@
 
 (use-package evil-nerd-commenter)
 
-;; Best programming language so we need to include it
-(use-package rustic
-  :config
-  (setq rustic-enable-detached-file-support t)
-  (setq rustic-lsp-client 'eglot))
-
-(use-package eldoc-box
-  :config
-  (setq eldoc-echo-area-use-multiline-p nil))
-
 (use-package flycheck
   :config
   (global-flycheck-mode 1))
@@ -427,32 +420,27 @@
   :config
   (global-flycheck-eglot-mode 1))
 
-
 (use-package eglot
   :elpaca (eglot :host github :repo "joaotavora/eglot")
-  :after (eldoc-box web-mode)
+  :after (web-mode)
   :hook ((prog-mode . eglot-ensure))
   :config
-  (setq completion-category-overrides '((eglot (styles orderless))))
-  (setq eldoc-idle-delay 0.0
-        eglot-events-buffer-size 0
-        flymake-no-changes-timeout 0.5
+
+  ;; (add-to-list 'eglot-ignored-server-capabilities :hoverProvider)
+  (setq eglot-events-buffer-size 0
         eglot-autoshutdown t)
-  (add-hook 'eglot-managed-mode-hook #'eldoc-box-hover-mode t)
-  (add-hook 'eglot-managed-mode-hook
-            (lambda ()
-              "Make sure Eldoc will show us all of the feedback at point."
-              (setq-local eldoc-documentation-strategy
-                          #'eldoc-documentation-compose)))
+  (add-hook 'eglot--managed-mode-hook (lambda () (flymake-mode -1)))
 
   ;; Yaml mode 
   (add-to-list 'auto-mode-alist '("\\.yml\\'" . yaml-ts-mode))
   (add-to-list 'auto-mode-alist '("\\.yaml\\'" . yaml-ts-mode))
 
+  ;; Svelte Mode
   (define-derived-mode svelte-mode web-mode "Svelte")
   (add-to-list 'auto-mode-alist '("\\.svelte\\'" . svelte-mode))
-  (add-to-list 'eglot-ignored-server-capabilities :hoverProvider)
   (add-to-list 'eglot-server-programs '(svelte-mode . ("svelteserver" "--stdio")))
+
+  ;; C++ Mode
   (add-to-list 'eglot-server-programs `((c-mode c-ts-mode c++-mode c++-ts-mode)
                                         . ,(eglot-alternatives
                                             '("ccls" "clangd"))))
@@ -461,44 +449,62 @@
   (add-to-list 'auto-mode-alist '("\\.vue\\'" . vue-mode))
   
   (defun vue-eglot-init-options ()
-               (let ((tsdk-path (expand-file-name
-                                 "lib"
-                                 (shell-command-to-string "npm list --global --parseable typescript | head -n1 | tr -d \"\n\""))))
-                 `(:typescript (:tsdk ,tsdk-path
-                                :languageFeatures (:completion
-                                                   (:defaultTagNameCase "both"
-                                                    :defaultAttrNameCase "kebabCase"
-                                                    :getDocumentNameCasesRequest nil
-                                                    :getDocumentSelectionRequest nil)
-                                                   :diagnostics
-                                                   (:getDocumentVersionRequest nil))
-                                :documentFeatures (:documentFormatting
-                                                   (:defaultPrintWidth 100
-                                                    :getDocumentPrintWidthRequest nil)
-                                                   :documentSymbol t
-                                                   :documentColor t)))))
+    (let ((tsdk-path (expand-file-name
+                      "lib"
+                      (shell-command-to-string "npm list --global --parseable typescript | head -n1 | tr -d \"\n\""))))
+      `(:typescript (:tsdk ,tsdk-path
+                           :languageFeatures (:completion
+                                              (:defaultTagNameCase "both"
+                                                                   :defaultAttrNameCase "kebabCase"
+                                                                   :getDocumentNameCasesRequest nil
+                                                                   :getDocumentSelectionRequest nil)
+                                              :diagnostics
+                                              (:getDocumentVersionRequest nil))
+                           :documentFeatures (:documentFormatting
+                                              (:defaultPrintWidth 100
+                                                                  :getDocumentPrintWidthRequest nil)
+                                              :documentSymbol t
+                                              :documentColor t)))))
   
   ;; Volar
   (add-to-list 'eglot-server-programs
-                          `(vue-mode . ("vue-language-server" "--stdio" :initializationOptions ,(vue-eglot-init-options)))))
+               `(vue-mode . ("vue-language-server" "--stdio" :initializationOptions ,(vue-eglot-init-options)))))
+
+(use-package rustic
+  :general
+  :config
+  (setq rustic-enable-detached-file-support t)
+  (setq rustic-lsp-client 'eglot))
 
 (use-package poetry)
 
-(use-package protobuf-mode)
+;; Credits to karthink > https://github.com/karthink/project-x/blob/234f528bf3cf320b0d07ca61c6f9b2566167f0b3/project-x.el#L157
+;; Recognize directories as projects by defining a new project backend `local'
+;; -------------------------------------
+(defcustom project-x-local-identifier ".project"
+  "Filename(s) that identifies a directory as a project.
+You can specify a single filename or a list of names."
+  :type '(choice (string :tag "Single file")
+                 (repeat (string :tag "Filename")))
+  :group 'project-x)
 
-(use-package typescript-mode
-  :after treesit
-  :config
-  ;; we choose this instead of tsx-mode so that eglot can automatically figure out language for server
-  ;; see https://github.com/joaotavora/eglot/issues/624 and https://github.com/joaotavora/eglot#handling-quirky-servers
-  (define-derived-mode typescriptreact-mode typescript-mode
-    "TypeScript TSX")
+(cl-defmethod project-root ((project (head local)))
+  "Return root directory of current PROJECT."
+  (cdr project))
 
-  ;; use our derived mode for tsx files
-  (add-to-list 'auto-mode-alist '("\\.tsx?\\'" . typescriptreact-mode)))
-  ;; by default, typescript-mode is mapped to the treesitter typescript parser
-  ;; use our derived mode to map both .tsx AND .ts -> typescriptreact-mode -> treesitter tsx
-  ;; (add-to-list 'tree-sitter-major-mode-language-alist '(typescriptreact-mode . tsx)))
+(defun project-x-try-local (dir)
+  "Determine if DIR is a non-VC project.
+DIR must include a .project file to be considered a project."
+  (if-let ((root (if (listp project-x-local-identifier)
+                     (seq-some (lambda (n)
+                                 (locate-dominating-file dir n))
+                               project-x-local-identifier)
+                   (locate-dominating-file dir project-x-local-identifier))))
+      (cons 'local root)))
+
+(add-hook 'project-find-functions 'project-x-try-local 90)
+
+;; (use-package protobuf-mode)
 
 (use-package web-mode
   :config
@@ -513,6 +519,9 @@
   :elpaca (treesit-langs :host github :repo "kiennq/treesit-langs"))
 
 (use-package magit
+  :general
+  (:keymaps 'transient-map
+            "<escape>" 'transient-quit-one)
   :config
   (add-hook 'git-commit-post-finish-hook 'magit)
   (setq magit-display-buffer-function #'magit-display-buffer-fullframe-status-v1))
@@ -553,26 +562,27 @@
         corfu-echo-documentation t ; Echo docs for current completion option
         corfu-popupinfo-delay 0.0
         corfu-quit-no-match 'separator
-        corfu-quit-at-boundary 'insert)
-
-  ;; Silence the pcomplete capf, no errors or messages!
-  (advice-add 'pcomplete-completions-at-point :around #'cape-wrap-silent)
-
-  ;; Ensure that pcomplete does not write to the buffer
-  ;; and behaves as a pure `completion-at-point-function'.
-  (advice-add 'pcomplete-completions-at-point :around #'cape-wrap-purify)
+        corfu-quit-at-boundary 'separator)
   (global-corfu-mode 1)
   (corfu-popupinfo-mode 1))
 
 (use-package cape
   :init
   (add-to-list 'completion-at-point-functions #'cape-file)
-  (add-to-list 'completion-at-point-functions #'cape-dabbrev))
+  (add-to-list 'completion-at-point-functions #'cape-dabbrev)
+
+
+  ;; Silence the pcomplete capf, no errors or messages!
+  (advice-add 'pcomplete-completions-at-point :around #'cape-wrap-silent)
+
+  ;; Ensure that pcomplete does not write to the buffer
+  ;; and behaves as a pure `completion-at-point-function'.
+  (advice-add 'pcomplete-completions-at-point :around #'cape-wrap-purify))
 
 (use-package embark
-  :bind
-  (("C-;" . embark-act)         ;; pick some comfortable binding
-   ("C-h B" . embark-bindings)) ;; alternative for `describe-bindings'
+  :general
+  ("C-a" 'embark-act)
+  ("C-h B" 'embark-bindings)
   :init
   ;; Optionally replace the key help with a completing-read interface
   (setq prefix-help-command #'embark-prefix-help-command
@@ -583,6 +593,7 @@
                '("\\`\\*Embark Collect \\(Live\\|Completions\\)\\*"
                  nil
                  (window-parameters (mode-line-format . none)))))
+
 (defun embark-which-key-indicator ()
   "An embark indicator that displays keymaps using which-key.
     The which-key help message will show the type and value of the
@@ -622,6 +633,10 @@
 
 (use-package vertico
   :elpaca (vertico :files (:defaults "extensions/*.el"))
+  :general
+  (:keymaps 'vertico-map
+            "C-j" 'vertico-next
+            "C-k" 'vertico-previous)
   :init
   (setq vertico-count 20
         vertico-resize nil
@@ -669,59 +684,59 @@
 
 (use-package orderless
   :custom
-  ;;(orderless-matching-styles '(orderless-literal orderless-regexp orderless-flex))
+  (orderless-matching-styles '(orderless-literal orderless-regexp orderless-flex))
   (completion-styles '(orderless))
   (completion-category-overrides '((file (styles partial-completion)))))
 
-(defvar consult--fd-command nil)
-(defun consult--fd-builder (input)
-  (unless consult--fd-command
-    (setq consult--fd-command
-          (if (eq 0 (call-process-shell-command "fdfind"))
-              "fdfind"
-            "fd")))
-  (pcase-let* ((`(,arg . ,opts) (consult--command-split input))
-               (`(,re . ,hl) (funcall consult--regexp-compiler
-                                      arg 'extended t)))
-    (when re
-      (cons (append
-             (list consult--fd-command
-                   "--color=never" "--full-path"
-                   (consult--join-regexps re 'extended))
-             opts)
-            hl))))
-
-(defun consult-fd (&optional dir initial)
-  (interactive "P")
-  (let* ((prompt-dir (consult--directory-prompt "Fd" dir))
-         (default-directory (cdr prompt-dir)))
-    (find-file (consult--find (car prompt-dir) #'consult--fd-builder initial))))
-
 (use-package consult
-  :hook (completion-list-mode . consult-preview-at-point-mode)
+  :general
+  ("?" '(consult-line :which-key "filter buffer"))
+  (:states '(normal motion)
+  "g" '(:ignore t :which-key "goto")
+  "g e" 'consult-compile-error
+  "g l" 'consult-goto-line)
+  ("M-C-'" 'consult-register-load)
+  ("M-'" 'consult-register-store)
+  ("M-\"" 'consult-register)
   :init
+  ;; Optionally configure the register formatting. This improves the register
+  ;; preview for `consult-register', `consult-register-load',
+  ;; `consult-register-store' and the Emacs built-ins.
   (setq register-preview-delay 0.5
         register-preview-function #'consult-register-format)
+
+  ;; Optionally tweak the register preview window.
+  ;; This adds thin lines, sorting and hides the mode line of the window.
   (advice-add #'register-preview :override #'consult-register-window)
+
+  ;; Use Consult to select xref locations with preview
   (setq xref-show-xrefs-function #'consult-xref
         xref-show-definitions-function #'consult-xref)
-  :config
-  (consult-customize
-   consult-theme :preview-key '(:debounce 0.2 any)
-   consult-ripgrep consult-git-grep consult-grep
-   consult-bookmark consult-recent-file consult-xref
-   consult--source-bookmark consult--source-file-register
-   consult--source-recent-file consult--source-project-recent-file
-   ;; :preview-key (kbd "M-.")
-   :preview-key '(:debounce 0.4 any))
-  (defun consult--orderless-regexp-compiler (input type &rest _config)
-    (setq input (orderless-pattern-compiler input))
-    (cons
-     (mapcar (lambda (r) (consult--convert-regexp r type)) input)
-     (lambda (str) (orderless--highlight input str))))
 
-  (setq consult--regexp-compiler #'consult--orderless-regexp-compiler)
-  (setq consult-narrow-key "<")) ;; (kbd "C-+")
+  ;; Enable using fd with consult
+  (defvar consult--fd-command nil)
+  (defun consult--fd-builder (input)
+    (unless consult--fd-command
+      (setq consult--fd-command
+            (if (eq 0 (call-process-shell-command "fdfind"))
+                "fdfind"
+              "fd")))
+    (pcase-let* ((`(,arg . ,opts) (consult--command-split input))
+                 (`(,re . ,hl) (funcall consult--regexp-compiler
+                                        arg 'extended t)))
+      (when re
+        (cons (append
+               (list consult--fd-command
+                     "--color=never" "--full-path"
+                     (consult--join-regexps re 'extended))
+               opts)
+              hl))))
+
+  (defun consult-fd (&optional dir initial)
+    (interactive "P")
+    (pcase-let* ((`(,prompt ,paths ,dir) (consult--directory-prompt "Fd" dir))
+                 (default-directory dir))
+      (find-file (consult--find prompt #'consult--fd-builder initial)))))
 
 (use-package embark-consult
   :hook (embark-collect-mode . consult-preview-at-point-mode))
@@ -729,31 +744,38 @@
 ;; Automatically paste a online link with the description set to the title of the page
 (use-package org-cliplink)
 
-;; Opening links at point
-(use-package link-hint)
-
 ;; Don't want to create table of content manually in org mode
 (use-package toc-org)
 
-(defadvice org-babel-execute-src-block (around load-language nil activate)
-  "Load language if needed"
-  (let ((language (org-element-property :language (org-element-at-point))))
-    (unless (cdr (assoc (intern language) org-babel-load-languages))
-      (add-to-list 'org-babel-load-languages (cons (intern language) t))
-      (org-babel-do-load-languages 'org-babel-load-languages org-babel-load-languages))
-    ad-do-it))
+(use-package org
+  :elpaca nil
+  :general
+  (:states '(normal motion)
+           "C-c a" 'org-capture)
+  (:keymaps 'org-mode-map
+            :states 'normal
+            "<RET>" '+org/dwim-at-point
+            "?\t" 'org-cycle
+            "z i" '(org-toggle-inline-images :whick-key "inline images"))
+  (defadvice org-babel-execute-src-block (around load-language nil activate)
+    "Load language if needed"
+    (let ((language (org-element-property :language (org-element-at-point))))
+      (unless (cdr (assoc (intern language) org-babel-load-languages))
+        (add-to-list 'org-babel-load-languages (cons (intern language) t))
+        (org-babel-do-load-languages 'org-babel-load-languages org-babel-load-languages))
+      ad-do-it))
 
-;; Life todo mangement with org mode and org agenda
-(setq org-log-done 'time)
-(setq org-todo-keywords
-      '((sequence "TODO(t)" "PROJ(p)" "ACTIVE(a)" "REVIEW(r)" "START(s)" "NEXT(N)" "WORKING(w)" "HOLD(h)" "|" "DONE(d)" "KILL(k)")
-        (sequence "|" "OKAY(o)" "YES(y)" "NO(n)")))
+  ;; Life todo mangement with org mode and org agenda
+  (setq org-log-done 'time)
+  (setq org-todo-keywords
+        '((sequence "TODO(t)" "PROJ(p)" "ACTIVE(a)" "REVIEW(r)" "START(s)" "NEXT(N)" "WORKING(w)" "HOLD(h)" "|" "DONE(d)" "KILL(k)")
+          (sequence "|" "OKAY(o)" "YES(y)" "NO(n)")))
 
-(defun adi/org-setup()
-  (org-indent-mode +1)
-  (toc-org-mode +1))
+  (defun adi/org-setup()
+    (org-indent-mode +1)
+    (toc-org-mode +1))
 
-(add-hook 'org-mode-hook 'adi/org-setup)
+  (add-hook 'org-mode-hook 'adi/org-setup))
 
 (use-package org-modern
   :config
@@ -778,20 +800,26 @@
         org-ellipsis "…")
   (global-org-modern-mode))
 
-(setq org-agenda-files '("~/Documents/Denote/Todo/"))
-(setq org-agenda-window-setup 'current-window
-      org-agenda-tags-column 0
-      org-agenda-start-on-weekday nil
-      org-agenda-block-separator ?─
-      org-agenda-time-grid
-      '((daily today require-timed)
-        (800 1000 1200 1400 1600 1800 2000)
-        " ┄┄┄┄┄ " "┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄")
-      org-agenda-current-time-string
-      "⭠ now ─────────────────────────────────────────────────"
-      org-agenda-span 14
-      org-agenda-start-day "-3d"
-      org-agenda-inhibit-startup t)
+(use-package org-agenda
+  :elpaca nil
+  :general
+  (aadi/leader-keys
+    "z" 'org-agenda)
+  :init
+  (setq org-agenda-files '("~/Documents/Denote/Todo/"))
+  (setq org-agenda-window-setup 'current-window
+        org-agenda-tags-column 0
+        org-agenda-start-on-weekday nil
+        org-agenda-block-separator ?─
+        org-agenda-time-grid
+        '((daily today require-timed)
+          (800 1000 1200 1400 1600 1800 2000)
+          " ┄┄┄┄┄ " "┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄")
+        org-agenda-current-time-string
+        "⭠ now ─────────────────────────────────────────────────"
+        org-agenda-span 14
+        org-agenda-start-day "-3d"
+        org-agenda-inhibit-startup t))
 
 (defvar denote-todo-directory)
 (use-package denote
@@ -849,22 +877,7 @@
 
 (if (fboundp 'elpaca-wait)(elpaca-wait))
 
-(general-create-definer aadi/leader-keys
-  :states '(normal motion visual operator emacs)
-  :keymaps '(override global local)
-  :prefix "SPC")
-(general-create-definer aadi/leader-local-keys
-  :states '(normal motion visual operator emacs)
-  :keymaps '(override global local)
-  :prefix "SPC m")
-
 (global-set-key (kbd "<escape>") 'keyboard-escape-quit)
-(global-set-key (kbd "C-;") 'embark-act)
-
-(general-define-key
- :keymaps 'vertico-map
- "C-j" 'vertico-next
- "C-k" 'vertico-previous)
 
 (general-define-key
  :keymaps '(minibuffer-mode-map isearch-mode-map)
@@ -883,7 +896,6 @@
 (general-define-key
  :states 'motion
  "K" 'helpful-at-point
- "?" '(consult-line :which-key "filter buffer")
  "M-/" 'evilnc-comment-or-uncomment-lines)
 
 (general-define-key
@@ -895,24 +907,22 @@
  "<C-backspace>" 'my/backward-kill-word)
 
 (aadi/leader-keys
-  "z" 'org-agenda)
-
-(general-define-key
- :keymaps 'dashboard-mode-map
- :states '(normal emacs)
- "RET" 'dashboard-return)
-
-(general-define-key
- :keymaps 'transient-map
- "<escape>" 'transient-quit-one)
-(aadi/leader-keys
-  :states '(normal motion)
-  "g" '(:ignore t :which-key "git")
+  "b" '(:ignore t :which-key "buffer")
+  "b b" 'consult-buffer
+  "b k" 'kill-this-buffer
+  "c" '(:ignore t :which-key "commands")
+  "c r" '(consult-complex-command :which-key "Complex Command repeat")
+  "f" '(:ignore t :which-key "files")
+  "f f" 'consult-fd
+  "f g" 'consult-ripgrep
+  "f b" 'consult-bookmark
+  "f r" 'consult-recent-file
   "g s" 'consult-git-grep
-  "g g" 'magit)
+  "m" '(:ignore t :which-key "mode")
+  "m k" 'consult-kmacro
+  )
 
 (aadi/leader-keys
-  :states '(normal motion)
   "n" '(:ignore t :which-key "denote")
   "n c" 'denote-create-note-in-subdirectory
   "n n" 'denote
@@ -928,57 +938,6 @@
   "n r" 'denote-rename-file
   "n R" 'denote-rename-file-using-front-matter)
 
-(aadi/leader-keys
-  :states '(normal motion)
-  "m" '(:ignore t :which-key "mode")
-  "m k" 'consult-kmacro)
-
-(aadi/leader-keys
-  :states '(normal motion)
-  "c" '(:ignore t :which-key "commands")
-  "c r" '(consult-complex-command :which-key "Complex Command repeat"))
-
-(aadi/leader-keys
-  :states '(normal motion)
-  "f" '(:ignore t :which-key "files")
-  "f b" 'consult-bookmark
-  "f r" 'consult-recent-file)
-
-(general-define-key
- :states '(normal motion)
- "g" '(:ignore t :which-key "goto"))
-
-(general-define-key
- :states '(normal motion)
- :prefix "g"
- "e" 'consult-compile-error
- "l" 'consult-goto-line)
-
-(general-define-key
- :states '(normal motion)
- "M-C-'" 'consult-register-load
- "M-'" 'consult-register-store
- "M-\"" 'consult-register)
-
-(aadi/leader-keys
-  :states '(normal motion)
-  "b" '(:ignore t :which-key "buffer")
-  "b f" 'fontaine-set-preset
-  "b b" 'consult-buffer
-  "b B" 'bookmark-bmenu-list
-  "b k" 'kill-this-buffer)
-
-(general-define-key
- :states '(normal motion)
- "C-c a" 'org-capture)
-(general-define-key
- :keymaps 'org-mode-map
- :states 'normal
- "<RET>" '+org/dwim-at-point
- "?\t" 'org-cycle
- "C-c a" 'link-hint-copy-link-at-point
- "z i" '(org-toggle-inline-images :whick-key "inline images"))
-
 (aadi/leader-keys org-mode-map
   "m" '(:ignore t :which-key "org localleader")
   "a" 'my-denote-move-from-todo-to-archive)
@@ -988,6 +947,14 @@
   "l" '(:ignore t :which-key "link")
   "l c" 'org-cliplink)
 
+(aadi/leader-keys
+  :states '(normal motion)
+  "g" '(:ignore t :which-key "git")
+  "g g" 'magit)
+
+(aadi/leader-keys :keymaps 'eglot-mode-map "m" '(:ignore t :which-key "eglot localleader"))
+(aadi/leader-local-keys :keymaps 'eglot-mode-map "a" 'eglot-format)
+
 (aadi/leader-local-keys
   :keymaps 'rustic-mode-map
   "z" 'Competitive-coding-output-input-toggle
@@ -996,24 +963,5 @@
   "f" 'copy-current-file
   "c" 'smart-compile)
 
-(general-define-key
- :prefix "C-h"
- "f" 'helpful-callable
- "v" 'helpful-variable
- "k" 'helpful-key
- "F" 'helpful-function
- "C" 'helpful-command)
-
-(general-define-key
- :states 'insert
- "C-s" 'tempel-complete)
-(general-define-key
- :states '(insert normal)
- :keymaps 'tempel-map
- "S-TAB" 'tempel-previous
- "TAB" 'tempel-next)
-
-(aadi/leader-keys eglot-mode-map
-  "m" '(:ignore t :which-key "eglot localleader"))
-(aadi/leader-local-keys eglot-mode-map
-  "a" 'eglot-format)
+(aadi/leader-keys
+  "b f" 'fontaine-set-preset)
