@@ -343,7 +343,7 @@ Start a kitty terminal session where the emacs current file (works with open dir
 Elpaca package manager which support async install of packages for faster install.
 It is in actively developing emacs package manager but it is not widely documented like straight.el or package.el by default.
 #+begin_src emacs-lisp
-(defvar elpaca-installer-version 0.3)
+(defvar elpaca-installer-version 0.4)
 (defvar elpaca-directory (expand-file-name "elpaca/" user-emacs-directory))
 (defvar elpaca-builds-directory (expand-file-name "builds/" elpaca-directory))
 (defvar elpaca-repos-directory (expand-file-name "repos/" elpaca-directory))
@@ -562,14 +562,35 @@ Everyone forgets keybindings
   (which-key-mode))
 #+end_src
 *** Theme
+**** Doom themes
+#+begin_src emacs-lisp
+(use-package doom-themes
+  :config
+  (setq doom-themes-enable-bold t
+        doom-themes-enable-italic t)
+  (doom-themes-visual-bell-config)
+
+  (load-theme 'doom-dracula t)
+  (add-hook 'server-after-make-frame-functions
+            (lambda (frame)
+              (with-selected-frame frame
+                (load-theme 'doom-dracula t))))
+  (custom-set-faces
+   '(doom-themes-visual-bell ((t (:background "#00FFFF"))))
+   '(emms-playlist-selected-face ((t (:foreground "royal blue"))))
+   '(emms-playlist-track-face ((t (:foreground "#5da3e7"))))
+   '(emms-playlist-selected-face ((t (:foreground "royal blue"))))
+   '(emms-playlist-track-face ((t (:foreground "#5da3e7"))))
+   '(org-ellipsis (( t(:foreground "#C678DD"))))))
+#+end_src
 **** Modus theme
 High contrast theme
 #+begin_src emacs-lisp
-(use-package modus-themes
-  :config
-  (setq modus-themes-italic-constructs t
-        modus-themes-bold-constructs t)
-  (load-theme 'modus-vivendi-tinted t))
+;; (use-package modus-themes
+;;   :config
+;;   (setq modus-themes-italic-constructs t
+;;         modus-themes-bold-constructs t)
+;;   (load-theme 'modus-vivendi-tinted t))
 #+end_src
 *** Doom modeline
 Changing the default modeline to a better one ( in my opinion )
@@ -628,6 +649,8 @@ Smart commentor for most of the languages
 #+end_src
 *** Eglot
 #+begin_src emacs-lisp
+(use-package project)
+
 (use-package flycheck
   :config
   (global-flycheck-mode 1))
@@ -639,7 +662,7 @@ Smart commentor for most of the languages
 
 (use-package eglot
   :elpaca (eglot :host github :repo "joaotavora/eglot")
-  :after (web-mode)
+  :after (web-mode project)
   :hook ((prog-mode . eglot-ensure))
   :config
 
@@ -697,19 +720,20 @@ Smart commentor for most of the languages
 #+end_src
 *** Python
 #+begin_src emacs-lisp
-(use-package poetry)
+;; (use-package poetry)
 #+end_src
 *** Project Management
 #+begin_src emacs-lisp
 ;; Credits to karthink > https://github.com/karthink/project-x/blob/234f528bf3cf320b0d07ca61c6f9b2566167f0b3/project-x.el#L157
 ;; Recognize directories as projects by defining a new project backend `local'
 ;; -------------------------------------
-(defcustom project-x-local-identifier ".project"
+
+(defcustom project-x-local-identifier '("package.json" "Cargo.toml")
   "Filename(s) that identifies a directory as a project.
 You can specify a single filename or a list of names."
   :type '(choice (string :tag "Single file")
                  (repeat (string :tag "Filename")))
-  :group 'project-x)
+  :group 'project)
 
 (cl-defmethod project-root ((project (head local)))
   "Return root directory of current PROJECT."
@@ -743,11 +767,15 @@ I still have not worked out typescript support with tsx and jsx file completion 
 #+end_src
 *** Tree sitter
 #+begin_src emacs-lisp
-(use-package treesit
-  :elpaca nil)
+;; (use-package treesit
+;;   :elpaca nil)
 
-(use-package treesit-langs
-  :elpaca (treesit-langs :host github :repo "kiennq/treesit-langs"))
+;; (use-package treesit-langs
+;;   :elpaca (treesit-langs :host github :repo "kiennq/treesit-langs"))
+(use-package tree-sitter
+  :config
+  (global-tree-sitter-mode))
+(use-package tree-sitter-langs)
 #+end_src
 *** Magit
 Best git client (start with `SPC g g`)
@@ -838,7 +866,7 @@ Performaing action in thing at point
 #+begin_src emacs-lisp
 (use-package embark
   :general
-  ("C-a" 'embark-act)
+  ("C-;" 'embark-act)
   ("C-h B" 'embark-bindings)
   :init
   ;; Optionally replace the key help with a completing-read interface
@@ -961,9 +989,9 @@ Better command for default actions like buffer management, find and grep actions
   :general
   ("?" '(consult-line :which-key "filter buffer"))
   (:states '(normal motion)
-  "g" '(:ignore t :which-key "goto")
-  "g e" 'consult-compile-error
-  "g l" 'consult-goto-line)
+           "g" '(:ignore t :which-key "goto")
+           "g e" 'consult-compile-error
+           "g l" 'consult-goto-line)
   ("M-C-'" 'consult-register-load)
   ("M-'" 'consult-register-store)
   ("M-\"" 'consult-register)

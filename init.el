@@ -199,7 +199,7 @@
   (interactive)
   (start-process "kitty" nil "setsid" "kitty" "-d" default-directory))
 
-(defvar elpaca-installer-version 0.3)
+(defvar elpaca-installer-version 0.4)
 (defvar elpaca-directory (expand-file-name "elpaca/" user-emacs-directory))
 (defvar elpaca-builds-directory (expand-file-name "builds/" elpaca-directory))
 (defvar elpaca-repos-directory (expand-file-name "repos/" elpaca-directory))
@@ -372,11 +372,30 @@
   :init
   (which-key-mode))
 
-(use-package modus-themes
+(use-package doom-themes
   :config
-  (setq modus-themes-italic-constructs t
-        modus-themes-bold-constructs t)
-  (load-theme 'modus-vivendi-tinted t))
+  (setq doom-themes-enable-bold t
+        doom-themes-enable-italic t)
+  (doom-themes-visual-bell-config)
+
+  (load-theme 'doom-dracula t)
+  (add-hook 'server-after-make-frame-functions
+            (lambda (frame)
+              (with-selected-frame frame
+                (load-theme 'doom-dracula t))))
+  (custom-set-faces
+   '(doom-themes-visual-bell ((t (:background "#00FFFF"))))
+   '(emms-playlist-selected-face ((t (:foreground "royal blue"))))
+   '(emms-playlist-track-face ((t (:foreground "#5da3e7"))))
+   '(emms-playlist-selected-face ((t (:foreground "royal blue"))))
+   '(emms-playlist-track-face ((t (:foreground "#5da3e7"))))
+   '(org-ellipsis (( t(:foreground "#C678DD"))))))
+
+;; (use-package modus-themes
+;;   :config
+;;   (setq modus-themes-italic-constructs t
+;;         modus-themes-bold-constructs t)
+;;   (load-theme 'modus-vivendi-tinted t))
 
 (use-package doom-modeline
   :elpaca (doom-modeline :host github :repo "seagle0128/doom-modeline")
@@ -411,6 +430,8 @@
 
 (use-package evil-nerd-commenter)
 
+(use-package project)
+
 (use-package flycheck
   :config
   (global-flycheck-mode 1))
@@ -422,7 +443,7 @@
 
 (use-package eglot
   :elpaca (eglot :host github :repo "joaotavora/eglot")
-  :after (web-mode)
+  :after (web-mode project)
   :hook ((prog-mode . eglot-ensure))
   :config
 
@@ -476,17 +497,18 @@
   (setq rustic-enable-detached-file-support t)
   (setq rustic-lsp-client 'eglot))
 
-(use-package poetry)
+;; (use-package poetry)
 
 ;; Credits to karthink > https://github.com/karthink/project-x/blob/234f528bf3cf320b0d07ca61c6f9b2566167f0b3/project-x.el#L157
 ;; Recognize directories as projects by defining a new project backend `local'
 ;; -------------------------------------
-(defcustom project-x-local-identifier ".project"
+
+(defcustom project-x-local-identifier '("package.json" "Cargo.toml" ".project")
   "Filename(s) that identifies a directory as a project.
 You can specify a single filename or a list of names."
   :type '(choice (string :tag "Single file")
                  (repeat (string :tag "Filename")))
-  :group 'project-x)
+  :group 'project)
 
 (cl-defmethod project-root ((project (head local)))
   "Return root directory of current PROJECT."
@@ -512,11 +534,15 @@ DIR must include a .project file to be considered a project."
         web-mode-code-indent-offset 2
         web-mode-css-indent-offset 2))
 
-(use-package treesit
-  :elpaca nil)
+;; (use-package treesit
+;;   :elpaca nil)
 
-(use-package treesit-langs
-  :elpaca (treesit-langs :host github :repo "kiennq/treesit-langs"))
+;; (use-package treesit-langs
+;;   :elpaca (treesit-langs :host github :repo "kiennq/treesit-langs"))
+(use-package tree-sitter
+  :config
+  (global-tree-sitter-mode))
+(use-package tree-sitter-langs)
 
 (use-package magit
   :general
@@ -581,7 +607,7 @@ DIR must include a .project file to be considered a project."
 
 (use-package embark
   :general
-  ("C-a" 'embark-act)
+  ("C-;" 'embark-act)
   ("C-h B" 'embark-bindings)
   :init
   ;; Optionally replace the key help with a completing-read interface
@@ -692,9 +718,9 @@ DIR must include a .project file to be considered a project."
   :general
   ("?" '(consult-line :which-key "filter buffer"))
   (:states '(normal motion)
-  "g" '(:ignore t :which-key "goto")
-  "g e" 'consult-compile-error
-  "g l" 'consult-goto-line)
+           "g" '(:ignore t :which-key "goto")
+           "g e" 'consult-compile-error
+           "g l" 'consult-goto-line)
   ("M-C-'" 'consult-register-load)
   ("M-'" 'consult-register-store)
   ("M-\"" 'consult-register)
