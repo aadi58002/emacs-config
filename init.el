@@ -497,13 +497,13 @@
   (setq rustic-enable-detached-file-support t)
   (setq rustic-lsp-client 'eglot))
 
-;; (use-package poetry)
+(use-package poetry)
 
 ;; Credits to karthink > https://github.com/karthink/project-x/blob/234f528bf3cf320b0d07ca61c6f9b2566167f0b3/project-x.el#L157
 ;; Recognize directories as projects by defining a new project backend `local'
 ;; -------------------------------------
 
-(defcustom project-x-local-identifier '("package.json" "Cargo.toml" ".project")
+(defcustom project-x-local-identifier '("package.json" "Cargo.toml")
   "Filename(s) that identifies a directory as a project.
 You can specify a single filename or a list of names."
   :type '(choice (string :tag "Single file")
@@ -716,8 +716,8 @@ DIR must include a .project file to be considered a project."
 
 (use-package consult
   :general
-  ("?" '(consult-line :which-key "filter buffer"))
   (:states '(normal motion)
+           "?" '(consult-line :which-key "filter buffer")
            "g" '(:ignore t :which-key "goto")
            "g e" 'consult-compile-error
            "g l" 'consult-goto-line)

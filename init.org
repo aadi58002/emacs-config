@@ -720,7 +720,7 @@ Smart commentor for most of the languages
 #+end_src
 *** Python
 #+begin_src emacs-lisp
-;; (use-package poetry)
+(use-package poetry)
 #+end_src
 *** Project Management
 #+begin_src emacs-lisp
@@ -987,8 +987,8 @@ Better command for default actions like buffer management, find and grep actions
 #+begin_src emacs-lisp
 (use-package consult
   :general
-  ("?" '(consult-line :which-key "filter buffer"))
   (:states '(normal motion)
+           "?" '(consult-line :which-key "filter buffer")
            "g" '(:ignore t :which-key "goto")
            "g e" 'consult-compile-error
            "g l" 'consult-goto-line)
@@ -1035,6 +1035,9 @@ Better command for default actions like buffer management, find and grep actions
                  (default-directory dir))
       (find-file (consult--find prompt #'consult--fd-builder initial)))))
 #+end_src
+
+#+RESULTS:
+
 *** Embark Consult
 #+begin_src emacs-lisp
 (use-package embark-consult
